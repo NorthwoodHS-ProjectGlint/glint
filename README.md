@@ -41,39 +41,31 @@ sudo pacman -S cmake pkgconfig glfw stb cjson
 
 ## Building
 
-Glint uses a two-stage build process:
+Glint can be built and installed using CMake:
 
-### 1. Build and Install the Glint Library
+### Build and Install
+
+From within the `glint/` directory:
 
 ```bash
-mkdir -p _glintbuild && cd _glintbuild
-cmake ../glint
+mkdir -p build && cd build
+cmake ..
 make -j$(nproc)
 sudo make install
 cd ..
 ```
 
-This builds the core `libglint.so` library and installs it to your system.
+This will:
+- Build the core `libglint.so` library
+- Build the bootloader executable
+- Build the homescreen application
+- Build the `glt_execcreate` tool
+- Install headers to `/usr/local/include/glint/`
+- Install the library to `/usr/local/lib/`
+- Install `glint.pc` pkg-config file
+- Install system tools to `/usr/local/bin/`
 
-### 2. Build the Project (Bootloader and Tools)
-
-```bash
-mkdir -p _build && cd _build
-cmake ..
-make -j$(nproc)
-cd ..
-```
-
-This builds the bootloader executable and associated system tools.
-
-### Quick Build
-
-You can also use the provided build script:
-```bash
-./makerun.sh
-```
-
-Note: This script builds, installs, and runs the bootloader automatically.
+The bootloader executable will be located at `build/system/bootloader/bootloader`.
 
 ## Running
 
@@ -81,12 +73,21 @@ The **bootloader** is the main executable for Glint. It initializes the system a
 
 ### Running the Bootloader
 
+From within the `glint/` directory, after building:
+
 ```bash
-mkdir -p _device && cd _device
-../_build/glint/system/bootloader/bootloader
+cd build/system/bootloader
+./bootloader
 ```
 
-The `_device` directory acts as the device's virtual filesystem where system apps and user data are stored.
+The bootloader should be run from a directory that will act as the device's virtual filesystem root. For a clean environment, you can create a dedicated directory:
+
+```bash
+mkdir -p device_root && cd device_root
+../build/system/bootloader/bootloader
+```
+
+This directory will store system apps and user data.
 
 ## Project Structure
 
