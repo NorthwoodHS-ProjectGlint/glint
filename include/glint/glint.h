@@ -1,0 +1,6 @@
+#include "io/io.h"
+#include "io/fs.h"
+#include "sys/exec.h"
+#include "gl/gl.h"
+#include "hid/hid.h"
+#include "sys/title.h"
