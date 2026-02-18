@@ -106,3 +106,31 @@ The Glint library (`libglint`) provides APIs for:
 - **Title/Game management** (`title.cpp`)
 - **I/O operations** (`io.cpp`)
 
+## Documentation
+
+Comprehensive documentation is available in the following files:
+
+- **[BUILDING.md](BUILDING.md)** - Complete build system documentation
+  - Two-stage build process
+  - `glt_execcreate` tool usage
+  - Title configuration format
+  - Resource packaging
+  - CMake integration
+  - Troubleshooting
+
+- **[APPLICATION_FRAMEWORK.md](APPLICATION_FRAMEWORK.md)** - Application development guide
+  - Required functions (`glattach`, `app_setup`, `app_cycle`, `app_present`, `app_shutdown`)
+  - Application lifecycle
+  - Pause/resume system
+  - Complete examples
+  - Limitations and constraints
+  - Best practices
+
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API reference
+  - I/O module
+  - Filesystem module
+  - Graphics module
+  - HID module (input)
+  - Title/Executable module
+  - Usage examples
+
