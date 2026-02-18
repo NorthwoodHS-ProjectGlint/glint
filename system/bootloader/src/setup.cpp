@@ -10,6 +10,8 @@ void sysOsInit()
 
         fsCreateDirectory("sys/apps/");
         fsCreateDirectory("sys/settings/");
+        
+        fsCreateDirectory("titles/");
     }
 
 

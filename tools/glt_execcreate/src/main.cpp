@@ -167,7 +167,7 @@ int main(int argc, char const *argv[])
     std::cout << "Executable file created successfully: " << output_path << "\n";
 
     // copy to directory
-    if (copy_to_directory) {
+    if (copy_to_directory && std::filesystem::exists(directory_to_copy)) {
         std::filesystem::copy_file(output_path, std::filesystem::path(directory_to_copy) / std::filesystem::path(output_path).filename(), std::filesystem::copy_options::overwrite_existing);
         std::cout << "Executable copied to: " << directory_to_copy << "\n";
     }

@@ -52,3 +52,4 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/glint.pc
 
 add_subdirectory(tools/glt_execcreate)
 add_subdirectory(system/bootloader)
+add_subdirectory(system/apps/homescreen)

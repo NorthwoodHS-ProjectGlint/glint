@@ -1,0 +1,14 @@
+{
+  "title": {
+    "id": "000400020000000",
+    "name": "Home Screen",
+    "description": "The main menu of the handheld.",
+    "icon": "icon.png",
+    "tags": ["home", "menu", "ui"],
+    "resources": "res/"
+  },
+  "dbg": {
+    "direct_copy": true,
+    "copy_directory": "/home/chris/handheld/_device/sys/apps"
+  }
+}
