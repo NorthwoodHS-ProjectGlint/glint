@@ -15,7 +15,7 @@ struct executable_title_info {
     char id[16];
     char name[32];
     char description[128];
-    uint8_t icon_data[128*128];
+    uint8_t icon_data[128*128*3];
     char tags[3][16];
 };
 
@@ -59,4 +59,61 @@ inline executable_file loadExeFile(const char* path) {
 
 
     return exec_file;
+}
+
+struct resource_pack_header {
+    char magic[4];
+    uint32_t resource_count;
+};
+
+struct resource_entry {
+    u_int16_t path_length;
+    char* path;
+
+    uint32_t data_size;
+    const void* data;
+};
+
+struct resource_pack_file {
+    resource_pack_header header;
+    resource_entry* entries;
+};
+
+inline resource_pack_file read_resource_pack(const void* data, size_t data_size)
+{
+    resource_pack_file res_pack;
+    const char* ptr = static_cast<const char*>(data);
+    size_t offset = 0;
+
+    // Read header
+    std::memcpy(&res_pack.header, ptr + offset, sizeof(res_pack.header));
+    offset += sizeof(res_pack.header);
+
+    // Allocate entries array
+    res_pack.entries = new resource_entry[res_pack.header.resource_count];
+
+    // Read each entry
+    for (size_t i = 0; i < res_pack.header.resource_count; i++) {
+        resource_entry& entry = res_pack.entries[i];
+
+        // Read path_length
+        std::memcpy(&entry.path_length, ptr + offset, sizeof(entry.path_length));
+        offset += sizeof(entry.path_length);
+
+        // Read path
+        entry.path = new char[entry.path_length];
+        std::memcpy(entry.path, ptr + offset, entry.path_length);
+        offset += entry.path_length;
+
+        // Read data_size
+        std::memcpy(&entry.data_size, ptr + offset, sizeof(entry.data_size));
+        offset += sizeof(entry.data_size);
+
+        // Read data
+        entry.data = new char[entry.data_size];
+        std::memcpy(const_cast<char*>(static_cast<const char*>(entry.data)), ptr + offset, entry.data_size);
+        offset += entry.data_size;
+    }
+
+    return res_pack;
 }

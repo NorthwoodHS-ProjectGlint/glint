@@ -16,6 +16,9 @@ TitleInfo titleLoadInfo(const char *path)
     std::memcpy(info.description, exec_file.title_info.description, sizeof(info.description));
     std::memcpy(info.icon_data, exec_file.title_info.icon_data, sizeof(info.icon_data));
     std::memcpy(info.tags, exec_file.title_info.tags, sizeof(info.tags));
+
+    info.icon_texture = glGenerateTexture(128,128,info.icon_data, 3);
+
     return info;
 }
 

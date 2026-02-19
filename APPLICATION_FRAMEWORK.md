@@ -186,6 +186,8 @@ When an application returns `2` from `app_cycle()`:
 float player_x = 0.0f;
 float player_y = 0.0f;
 bool game_running = true;
+int playerTexture = 0;
+int backgroundTexture = 0;
 
 extern "C" void glattach(void* ctx) {
     glAttach(ctx);
@@ -196,10 +198,13 @@ extern "C" void app_setup() {
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     
-    // Load resources here
+    // Load textures from embedded resources
+    playerTexture = glGenerateTexture("H:/sprites/player.png", 4);
+    backgroundTexture = glGenerateTexture("H:/backgrounds/level1.png", 3);
+    
     // Initialize game state
-    player_x = 0.0f;
-    player_y = 0.0f;
+    player_x = 240.0f;  // Center X
+    player_y = 136.0f;  // Center Y
     game_running = true;
     
     ioDebugPrint("Game initialized\n");
@@ -264,10 +269,11 @@ extern "C" void app_shutdown() {
 
 ### Rendering Limitations
 
-- **OpenGL only**: No other rendering APIs supported
+- **OpenGL ES 3.0**: Uses OpenGL ES 3.0 (not desktop OpenGL)
 - **Context managed by system**: Don't create your own GL context
 - **Single window**: Applications share the main window
-- **Fixed resolution**: Window size is managed by the system
+- **Fixed resolution**: 480x272 pixels (PSP-like resolution)
+- **Screen coordinates**: Origin at top-left (0,0 to 480,272)
 
 ### Input Limitations
 
@@ -280,6 +286,8 @@ extern "C" void app_shutdown() {
 - **Virtual filesystem**: Use Glint FS API, not standard C/C++ file I/O
 - **Sandboxed access**: Applications can only access their own directories
 - **Read-only resources**: Packaged resources are read-only
+- **Resource mounting**: Resources must be mounted before use (typically done by system)
+- **Mount points**: Resources accessed via virtual drive letters (e.g., "H:/", "S:/")
 
 ### API Constraints
 

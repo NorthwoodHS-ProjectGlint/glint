@@ -60,7 +60,7 @@ glt_execcreate <input_binary> <title_config>
 
 Creates a `.glt` file named after the title ID specified in the configuration, containing:
 - **Header**: Magic number "GLTE", executable size, resource size
-- **Title Info**: ID, name, description, icon data (128x128), tags
+- **Title Info**: ID, name, description, icon data (128x128 RGB), tags
 - **Executable Data**: The compiled shared library
 - **Resource Pack**: Packaged resource files
 
@@ -95,7 +95,7 @@ Create a `.titleconfig` JSON file for your application:
   - User titles: `000400000000XXX`
 - **`name`** (required): Display name (max 32 characters)
 - **`description`** (required): Short description (max 128 characters)
-- **`icon`** (required): Path to icon image (will be resized to 128x128)
+- **`icon`** (required): Path to icon image (must be PNG, will be converted to 128x128 RGB)
 - **`tags`** (required): Array of up to 3 tags (max 16 chars each)
 - **`resources`** (required): Path to resources directory (relative to `.titleconfig`)
 
@@ -203,7 +203,7 @@ After building:
 |  - ID (16 bytes) |
 |  - Name (32 b)   |
 |  - Desc (128 b)  |
-|  - Icon (16384b) |
+|  - Icon (49152b) |  <- 128x128x3 RGB
 |  - Tags (48 b)   |
 +------------------+
 | Executable Data  |
@@ -241,3 +241,5 @@ After building:
 4. **Title IDs**: Use unique IDs, follow the numbering convention
 5. **Clean builds**: Use separate build directories (`_build`, `_glintbuild`)
 6. **Parallel builds**: Use `-j$(nproc)` for faster compilation
+7. **Icon format**: Use PNG format for icons, will be auto-converted to 128x128 RGB
+8. **Resource access**: Access resources via mount points (e.g., "H:/sprites/player.png")

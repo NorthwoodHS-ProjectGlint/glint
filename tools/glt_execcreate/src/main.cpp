@@ -5,6 +5,8 @@
 #include <fstream>
 
 #include <cjson/cJSON.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <vector>
 
 #include "includes.h"
@@ -42,7 +44,6 @@ resource_pack_file create_resource_pack(const char* resource_directory, size_t* 
 
     for (size_t i = 0; i < resource_files.size(); i++) {
         const auto& path = resource_files[i];
-        std::cout << "Found resource file: " << path << "\n";
 
         resource_entry entry;
         entry.path_length = std::filesystem::relative(path, resource_directory).string().length();
@@ -59,6 +60,39 @@ resource_pack_file create_resource_pack(const char* resource_directory, size_t* 
     return res_pack;
 }
 
+void* serialize_resource_pack(const resource_pack_file& rpack, size_t size)
+{
+    char* buffer = new char[size];
+    char* ptr = buffer;
+    
+    // Write header
+    std::memcpy(ptr, &rpack.header, sizeof(rpack.header));
+    ptr += sizeof(rpack.header);
+    
+    // Write each entry
+    for (size_t i = 0; i < rpack.header.resource_count; i++) {
+        const resource_entry& entry = rpack.entries[i];
+        
+        // Write path_length
+        std::memcpy(ptr, &entry.path_length, sizeof(entry.path_length));
+        ptr += sizeof(entry.path_length);
+        
+        // Write path
+        std::memcpy(ptr, entry.path, entry.path_length);
+        ptr += entry.path_length;
+        
+        // Write data_size
+        std::memcpy(ptr, &entry.data_size, sizeof(entry.data_size));
+        ptr += sizeof(entry.data_size);
+        
+        // Write data
+        std::memcpy(ptr, entry.data, entry.data_size);
+        ptr += entry.data_size;
+    }
+    
+    return buffer;
+}
+
 int main(int argc, char const *argv[])
 {
 
@@ -70,8 +104,6 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    //printf("Arguments:\nInput binary: %s\nTitle config: %s\nOutput executable: %s\n", argv[1], argv[2], argv[3]);
-
     // read exec file
     executable_file exec_file;
     std::memcpy(exec_file.header.magic, "GLTE", 4);
@@ -82,8 +114,6 @@ int main(int argc, char const *argv[])
         std::cerr << "Failed to read input binary: " << argv[1] << "\n";
         return -1;
     }
-
-    //printf("Loaded input binary: %s (size: %u bytes)\n", argv[1], exec_file.header.executable_size);
 
     // read title config
     void* resource_data = nullptr;
@@ -101,6 +131,8 @@ int main(int argc, char const *argv[])
         const char* description = cJSON_GetStringValue(cJSON_GetObjectItem(title,"description"));
         const char* icon_path = cJSON_GetStringValue(cJSON_GetObjectItem(title,"icon"));
 
+
+
         cJSON* tag_array = cJSON_GetObjectItem(title, "tags");
         int tag_array_size = cJSON_GetArraySize(tag_array);
         const char** tags = new const char*[tag_array_size];
@@ -109,6 +141,7 @@ int main(int argc, char const *argv[])
         {
             tags[i] = cJSON_GetStringValue(cJSON_GetArrayItem(tag_array,i));
         }
+
 
         std::string resource_path = cJSON_GetStringValue(cJSON_GetObjectItem(title, "resources"));
         
@@ -130,19 +163,44 @@ int main(int argc, char const *argv[])
             exec_file.title_info.tags[i][0] = '\0';
         }
 
+
+
         //printf("Title name: %s\nTitle description: %s\n", exec_file.title_info.name, exec_file.title_info.description);
 
         // load resources
         size_t res_size = 0;
         resource_pack_file rpack = create_resource_pack(resource_path.c_str(), &res_size);
 
+
+
         exec_file.header.resource_size = res_size;
 
-        resource_data = new char[res_size];
-        std::memcpy(resource_data, &rpack, res_size);
-        
-        //printf("Created resource pack from directory: %s (size: %u bytes)\n", resource_path.c_str(), res_size);
-        
+        resource_data = serialize_resource_pack(rpack, res_size);
+
+        std::cout << "Loading icon image: " << icon_path << "\n";
+
+        int width, height, channels;
+
+        // Load the image data
+        unsigned char* icon_data = stbi_load(
+            icon_path, // File path as a C-style string
+            &width,    // Pointer to store the image width
+            &height,   // Pointer to store the image height
+            &channels, // Pointer to store the number of channels (e.g., 3 for RGB, 4 for RGBA)
+            3          // Desired channels (0 to use the number of channels in the file)
+        );
+        if (!icon_data) {
+            std::cerr << "Failed to load icon image: " << icon_path << "\n";    
+        } else {
+            std::cout << "Loaded icon image: " << icon_path << "\n";
+            std::memcpy(exec_file.title_info.icon_data, icon_data, sizeof(exec_file.title_info.icon_data));
+            stbi_image_free((void*)icon_data);
+
+
+        }
+
+    
+
     }
 
 

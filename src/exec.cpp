@@ -1,5 +1,6 @@
 #include "glint/glint.h"
 
+#include <map>
 #include <cstring>
 #include <algorithm>
 #include <cstdint>
@@ -7,9 +8,12 @@
 #include <dlfcn.h>
 #include <cstdio>
 #include <unistd.h>
+#include <string>
 #include "exec_internal.h"
 
+typedef std::map<std::string, resource_entry> ResourceMap;
 
+static std::map<char*, ResourceMap> g_mountedResources = {} ;
 
 Executable execLoad(const char *path)
 {
@@ -51,7 +55,60 @@ void *execExtract(const Executable* exec)
     return handle;
 }
 
-void execCallGlAttach(void *handle, void* ctx)
+
+
+void execMountResource(const Executable *exec, char mountPoint[3])
+{
+    if (!exec || !exec->resource) {
+        ioDebugPrint("Invalid executable or no resources to mount\n");
+        return;
+    }
+
+    ResourceMap resourceMap;
+    resource_pack_file pack = read_resource_pack(exec->resource, exec->resource_size);
+
+    for (int i = 0; i < pack.header.resource_count; i++)
+    {
+        ioDebugPrint("Mounting resource: %s (size: %u bytes)\n", pack.entries[i].path, pack.entries[i].data_size);
+        resourceMap[pack.entries[i].path] = pack.entries[i];
+    }
+    g_mountedResources[mountPoint] = resourceMap;
+    
+
+}
+
+const void *execGetResource(const char *path, size_t *out_size)
+{
+    // get first 3 characters as mount point
+    const char mountPoint[4] = {path[0], path[1], path[2], '\0'};
+    const char* resourcePath = path + 3; // skip mount point
+
+
+
+    for (const auto& mountPointEntry : g_mountedResources) {
+
+
+        if (strcmp(mountPointEntry.first, mountPoint) == 0) {
+
+
+            const auto& resourceMap = mountPointEntry.second;
+            const auto& it = resourceMap.find(std::string(resourcePath));
+            if (it != resourceMap.end()) {
+
+                if (out_size) {
+                    *out_size = it->second.data_size;
+                }
+                return it->second.data;
+            } else {
+                ioDebugPrint("Resource not found in mount point: %s\n", mountPointEntry.first);
+
+            }
+        }
+    }
+    return nullptr;
+}
+
+void execCallGlAttach(void *handle, void *ctx)
 {
     auto func = (void(*)(void*))dlsym(handle, "glattach");
     if (!func) {

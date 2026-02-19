@@ -12,17 +12,23 @@ public:
 
 private:
     int dbg_tabIndex = 0;
-    int dbg_pageIndex = 0;
 
-    std::vector<const char*> dbg_tabs = {};
     std::vector<TitleInfo> titles = {};
 
     TitleThread* currentThread = nullptr;
     bool isPauseMenuVisible = false;
 
-    void renderTab(const char* text, int index);
-    void refreshTabs();
-
     void onGameExit();
     void onGameReturn();
+
+
+    // assets
+    int appIcon_empty;
+    int appIcon_filled;
+    int sidebar;
+    int sidebar_button;
+
+    int appIcon_select;
+    
+    int uiShader;
 };

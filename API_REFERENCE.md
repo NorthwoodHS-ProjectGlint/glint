@@ -156,35 +156,42 @@ fsWriteFile("saves/progress.dat", &save, sizeof(SaveData));
 const void* fsReadFile(const char* path, size_t* out_size);
 ```
 
-Read entire file into memory.
+Read entire file into memory (supports resource paths).
 
 **Parameters**:
-- `path`: File path to read
+- `path`: File path to read (can include mount points like "H:/")
 - `out_size`: Pointer to receive file size in bytes
 
 **Returns**: Pointer to file data, or `nullptr` on failure
 
 **Example**:
 ```cpp
+// Read from filesystem
 size_t size;
 const void* data = fsReadFile("saves/progress.dat", &size);
 if (data) {
     SaveData* save = (SaveData*)data;
     ioDebugPrint("Loaded level: %d\n", save->level);
 }
+
+// Read from embedded resources
+const void* imageData = fsReadFile("H:/textures/player.png", &size);
+int texture = glGenerateTexture((const unsigned char*)imageData, size, 4);
 ```
 
 **Important**: The returned data is managed by the system - don't free it manually.
+
+**Resource Paths**: Paths starting with a mount point (e.g., "H:/", "S:/") are automatically loaded from mounted resource packs.
 
 #### `fsFileExists`
 ```cpp
 bool fsFileExists(const char* path);
 ```
 
-Check if a file exists.
+Check if a file exists (supports resource paths).
 
 **Parameters**:
-- `path`: File path to check
+- `path`: File path to check (can include mount points like "H:/")
 
 **Returns**: `true` if file exists, `false` otherwise
 
@@ -193,7 +200,14 @@ Check if a file exists.
 if (fsFileExists("saves/autosave.dat")) {
     load_autosave();
 }
+
+// Check for embedded resource
+if (fsFileExists("H:/config.json")) {
+    load_config();
+}
 ```
+
+**Note**: Automatically checks mounted resource packs when path starts with a mount point.
 
 ---
 
@@ -317,6 +331,103 @@ if (shader != -1) {
     glUseProgram(shader);
 }
 ```
+
+### Texture Functions
+
+#### `glGenerateTexture` (From Raw Data)
+```cpp
+int glGenerateTexture(int width, int height, const unsigned char* data, int desiredChannels);
+```
+
+Create an OpenGL texture from raw pixel data.
+
+**Parameters**:
+- `width`: Texture width in pixels
+- `height`: Texture height in pixels
+- `data`: Pointer to raw pixel data
+- `desiredChannels`: Number of channels (3 for RGB, 4 for RGBA)
+
+**Returns**: Texture ID
+
+**Example**:
+```cpp
+unsigned char pixels[128 * 128 * 3]; // RGB data
+// ... fill pixels ...
+int texture = glGenerateTexture(128, 128, pixels, 3);
+glBindTexture(GL_TEXTURE_2D, texture);
+```
+
+#### `glGenerateTexture` (From Memory)
+```cpp
+int glGenerateTexture(const unsigned char* data, int dataSize, int desiredChannels = 3);
+```
+
+Create a texture from an image file in memory (PNG, JPG, TGA, etc.).
+
+**Parameters**:
+- `data`: Pointer to image file data in memory
+- `dataSize`: Size of the image data in bytes
+- `desiredChannels`: Number of channels to load (default: 3 for RGB)
+
+**Returns**: Texture ID, or 0 on failure
+
+**Example**:
+```cpp
+size_t size;
+const unsigned char* imageData = fsReadFile("H:/texture.png", &size);
+int texture = glGenerateTexture(imageData, size, 4); // Load as RGBA
+```
+
+#### `glGenerateTexture` (From File)
+```cpp
+int glGenerateTexture(const char* filePath, int desiredChannels = 3);
+```
+
+Create a texture from an image file path (supports resource paths).
+
+**Parameters**:
+- `filePath`: Path to image file (can use resource mount points like "H:/")
+- `desiredChannels`: Number of channels to load (default: 3 for RGB)
+
+**Returns**: Texture ID, or 0 on failure
+
+**Example**:
+```cpp
+// Load from embedded resources
+int texture = glGenerateTexture("H:/sprites/player.png", 4);
+
+// Load from filesystem
+int background = glGenerateTexture("backgrounds/menu.png", 3);
+```
+
+**Supported Formats**: PNG, JPG, TGA, BMP, PSD, GIF, HDR, PIC
+
+### Rendering Helpers
+
+#### `glQuadDraw`
+```cpp
+void glQuadDraw(float x, float y, float width, float height, int shader);
+```
+
+Draw a textured quad at the specified position.
+
+**Parameters**:
+- `x`: X position in screen coordinates (0-480)
+- `y`: Y position in screen coordinates (0-272)
+- `width`: Quad width in pixels
+- `height`: Quad height in pixels
+- `shader`: Shader program to use
+
+**Example**:
+```cpp
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, myTexture);
+glUniform1i(glGetUniformLocation(shader, "tex"), 0);
+
+glQuadDraw(100, 50, 64, 64, shader);
+```
+
+**Note**: Texture must be bound before calling. Position is in screen space (top-left origin).
 
 ### Debug Text Functions
 
@@ -585,12 +696,17 @@ struct TitleInfo {
     char id[16];
     char name[32];
     char description[128];
-    uint8_t icon_data[128*128];
+    uint8_t icon_data[128*128*3];  // RGB data
     char tags[3][16];
+    int icon_texture;  // OpenGL texture ID (runtime)
 };
 ```
 
 Contains metadata about a title/application.
+
+**Fields**:
+- `icon_data`: Raw RGB pixel data (128x128 pixels, 3 bytes per pixel)
+- `icon_texture`: OpenGL texture ID created automatically when loading
 
 #### `Executable`
 ```cpp
@@ -616,16 +732,19 @@ Load title metadata from a `.glt` file without executing it.
 **Parameters**:
 - `path`: Path to `.glt` file
 
-**Returns**: `TitleInfo` structure with metadata
+**Returns**: `TitleInfo` structure with metadata and icon texture
 
 **Example**:
 ```cpp
 TitleInfo info = titleLoadInfo("titles/000400000000001.glt");
 ioDebugPrint("Title: %s\n", info.name);
 ioDebugPrint("Description: %s\n", info.description);
+
+// Icon texture is automatically created
+glBindTexture(GL_TEXTURE_2D, info.icon_texture);
 ```
 
-**Note**: Used by the homescreen to display available titles.
+**Note**: Automatically creates an OpenGL texture from the icon data.
 
 #### `execLoad`
 ```cpp
@@ -649,6 +768,52 @@ if (exec.executable) {
 
 **Note**: Primarily for internal/system use. Applications don't typically load other executables.
 
+#### `execMountResource`
+```cpp
+void execMountResource(const Executable* exec, char mountPoint[3] = "H:/");
+```
+
+Mount an executable's resource pack to a virtual drive letter.
+
+**Parameters**:
+- `exec`: Pointer to loaded executable
+- `mountPoint`: 3-character mount point (e.g., "H:/", "S:/")
+
+**Example**:
+```cpp
+Executable exec = execLoad("my_game.glt");
+execMountResource(&exec, "H:/");
+
+// Now resources can be accessed via H:/ prefix
+const void* data = execGetResource("H:/sprites/player.png", &size);
+```
+
+**Note**: System resources are typically mounted to "S:/" by the bootloader.
+
+#### `execGetResource`
+```cpp
+const void* execGetResource(const char* path, size_t* out_size = nullptr);
+```
+
+Get a resource from a mounted resource pack.
+
+**Parameters**:
+- `path`: Resource path with mount point (e.g., "H:/textures/sprite.png")
+- `out_size`: Optional pointer to receive resource size
+
+**Returns**: Pointer to resource data, or `nullptr` if not found
+
+**Example**:
+```cpp
+size_t size;
+const void* imageData = execGetResource("H:/images/logo.png", &size);
+if (imageData) {
+    int texture = glGenerateTexture((const unsigned char*)imageData, size, 4);
+}
+```
+
+**Note**: Resources are read-only and managed by the system.
+
 ---
 
 ## OpenGL Support
@@ -660,7 +825,48 @@ Glint includes OpenGL support via GLAD. Include the OpenGL headers:
 #include <GLFW/glfw3.h>
 ```
 
-All standard OpenGL functions are available. Use the `glGenerateShader()` helper for shader compilation or use OpenGL directly.
+All standard OpenGL functions are available. Use the `glGenerateShader()` and texture generation helpers, or use OpenGL directly.
+
+The system uses **OpenGL ES 3.0** with a fixed resolution of **480x272 pixels**.
+
+---
+
+## Resource System
+
+### Mount Points
+
+Glint uses a virtual file system with mount points for accessing packaged resources:
+
+- **H:/** - Your application's resources (mounted automatically by system)
+- **S:/** - System resources (homescreen assets, fonts, etc.)
+
+### Resource Workflow
+
+1. **Package resources** in your app's `res/` directory
+2. **Resources are mounted** automatically when your app starts
+3. **Access via mount point**: Use `fsReadFile("H:/texture.png")` or `glGenerateTexture("H:/texture.png")`
+
+### Example Resource Usage
+
+```cpp
+extern "C" void app_setup() {
+    // Load texture from embedded resources
+    int playerSprite = glGenerateTexture("H:/sprites/player.png", 4);
+    
+    // Load config file from resources
+    size_t size;
+    const void* configData = fsReadFile("H:/config.json", &size);
+    
+    // Resources are read-only and managed by the system
+}
+```
+
+### Benefits
+
+- **No file I/O overhead**: Resources loaded directly from memory
+- **Self-contained apps**: Everything packaged in a single `.glt` file  
+- **Fast access**: No disk reads during gameplay
+- **Organized**: Clear separation between app resources (H:/) and system resources (S:/)
 
 ---
 

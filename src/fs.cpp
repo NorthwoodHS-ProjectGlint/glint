@@ -31,6 +31,13 @@ void fsCreateFile(const char *path)
 
 bool fsFileExists(const char *path)
 {
+
+    if (path[1] == ':' && path[2] == '/') {
+        // load from embedded resources
+        const void *resourceData = execGetResource(path, nullptr);
+        return resourceData != nullptr;
+    }
+
     return fs::exists(path) && fs::is_regular_file(path);
 }
 
@@ -59,7 +66,19 @@ const char **fsListDirectory(const char *path, size_t *out_count)
 const void *fsReadFile(const char *path, size_t *out_size)
 {
     if (!fsFileExists(path)) return nullptr;
-    
+
+    // check if the path is using the resource system
+    if (path[1] == ':' && path[2] == '/') {
+        // load from embedded resources
+        const void *resourceData = execGetResource(path, out_size);
+        if (resourceData) {
+            return resourceData;
+        } else {
+            ioDebugPrint("Resource not found: %s\n", path);
+            return nullptr;
+        }
+    }
+
     size_t size = fs::file_size(path);
     char *buffer = new char[size];
     std::ifstream file(path, std::ios::binary);

@@ -45,6 +45,8 @@ void sysHomeScreenBoot()
         return;
     }
 
+    execMountResource(&home_screen_exec, "S:/");
+
     void* window = glSetup();
 
     hidInit();

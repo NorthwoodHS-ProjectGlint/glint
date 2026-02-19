@@ -11,7 +11,7 @@ struct executable_title_info {
     char id[16];
     char name[32];
     char description[128];
-    uint8_t icon_data[128*128];
+    uint8_t icon_data[128*128*3];
     char tags[3][16];
 };
 

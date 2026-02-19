@@ -8,8 +8,6 @@
 void HomeScreen::init() {
     // Set background color (dark navy, like a console UI)
 
-    refreshTabs();
-
     size_t gamesLoaded = 0;
     const char** titles = fsListDirectory("titles/", &gamesLoaded);
 
@@ -22,9 +20,84 @@ void HomeScreen::init() {
         strcat(full_path, titles[i]);
 
         TitleInfo info = titleLoadInfo(full_path);
+
+        ioDebugPrint("Title icon index: %d\n", info.icon_texture);
+
         this->titles.push_back(info);
     }
+
+    ioDebugPrint("Total titles loaded: %zu\n", this->titles.size());
     
+    appIcon_empty = glGenerateTexture("S:/AppEmpty.png", 4);
+    appIcon_filled = glGenerateTexture("S:/AppFilled.png", 4);
+    sidebar = glGenerateTexture("S:/HS_Sidebar.png", 4);
+    sidebar_button = glGenerateTexture("S:/HS_SidebarButton.png", 4);
+    appIcon_select = glGenerateTexture("S:/AppSelectOverlay.png", 4);
+
+
+
+    ioDebugPrint("Assets loaded\n");
+
+    uiShader = glGenerateShader(
+        // Vertex shader
+        R"(
+        #version 300 es
+        layout(location = 0) in vec2 aPos;
+        layout(location = 1) in vec2 aTexCoord;
+        
+        out vec2 TexCoord;
+
+        uniform vec2 position;
+        uniform vec2 scale;
+
+        #define SCREEN_WIDTH 480.0
+        #define SCREEN_HEIGHT 272.0
+        
+        void main() {
+
+            // generate screen-space position
+            vec2 scaledPos = aPos * scale;
+            vec2 screenPos = position + scaledPos;
+            vec2 ndcPos = (screenPos / vec2(SCREEN_WIDTH, SCREEN_HEIGHT)) * 2.0 - 1.0;
+            ndcPos.y = -ndcPos.y; // Flip Y for OpenGL coordinate system
+
+            gl_Position = vec4(ndcPos, 0.0, 1.0);
+            TexCoord = aTexCoord;
+        }
+        )",
+        // Fragment shader
+        R"(
+        #version 300 es
+        precision mediump float;
+        
+        in vec2 TexCoord;
+        uniform sampler2D tex;
+        uniform sampler2D overlay;
+        uniform bool hasOverlay;
+        
+        out vec4 FragColor;
+        
+        void main() {
+            vec4 baseColor = texture(tex, TexCoord);
+
+            vec2 adjustedTexCoord = TexCoord; // Adjust as needed for overlay texture
+            adjustedTexCoord *= vec2(95,95);
+            adjustedTexCoord -= vec2(10,6);
+            adjustedTexCoord /= vec2(75,75);
+
+            vec4 overlayColor = texture(overlay, adjustedTexCoord);
+            if (hasOverlay) {
+                FragColor = overlayColor * baseColor;
+                FragColor.a = baseColor.a;
+            } else {
+                FragColor = baseColor;
+            }
+        }
+
+        )"
+    );
+
+    ioDebugPrint("Home screen initialized\n");
 
 }
 
@@ -34,9 +107,6 @@ void HomeScreen::onGameExit()
     glfwMakeContextCurrent(window);
 
     isPauseMenuVisible = false;
-    dbg_pageIndex = 0;
-    dbg_tabIndex = 0;
-    refreshTabs();
 
     ioDebugPrint("Game thread exited\n");
 }
@@ -49,9 +119,6 @@ void HomeScreen::onGameReturn()
 
     // show pause menu
     isPauseMenuVisible = true;
-    dbg_pageIndex = 2;
-    dbg_tabIndex = 0;
-    refreshTabs();
 
     ioDebugPrint("Game thread paused\n");
 }
@@ -67,6 +134,10 @@ void HomeScreen::update() {
         if (currentThread->isRunning && currentThread->isPaused && !isPauseMenuVisible) {
 
             onGameReturn();
+            
+            ioDebugPrint("Exiting game thread\n");
+            currentThread->isRunning = false;
+            currentThread = nullptr;
 
         } else if (!currentThread->isRunning && currentThread->isPaused) {
 
@@ -83,25 +154,20 @@ void HomeScreen::update() {
             return;
     }
 
-    if (hidIsButtonPressed(GLFW_KEY_DOWN)) {
-        dbg_tabIndex = (dbg_tabIndex + 1) % dbg_tabs.size();
+    if (hidIsButtonPressed(GLFW_KEY_LEFT)) {
+        if (dbg_tabIndex > 0) dbg_tabIndex--;
+    } else if (hidIsButtonPressed(GLFW_KEY_RIGHT)) {
+        if (dbg_tabIndex < 11) dbg_tabIndex++;
     }
 
-    if (hidIsButtonPressed(GLFW_KEY_UP)) {
-        dbg_tabIndex = (dbg_tabIndex + dbg_tabs.size() - 1) % dbg_tabs.size();
-    }
+
+
 
     if (hidIsButtonPressed(GLFW_KEY_ENTER)) {
         // TODO: handle tab selection
 
-        if (dbg_pageIndex == 0 && dbg_tabIndex == 0) {
-            dbg_pageIndex = 1; // launch game page
-        } else if (dbg_pageIndex == 1 && dbg_tabIndex == 0) {
-            dbg_pageIndex = 0; // back to home page
-        } else if (dbg_pageIndex == 1 && dbg_tabIndex != 0) {
-            // launch game
-
-            int gameIndex = dbg_tabIndex - 1;
+        if (!currentThread) {
+            int gameIndex = dbg_tabIndex;
 
             if (gameIndex >= 0 && gameIndex < this->titles.size()) {
                 // path is at titles/<title_id>.glt
@@ -126,22 +192,13 @@ void HomeScreen::update() {
 
                 ioDebugPrint("Game thread launched\n");
 
+            } else {
+                ioDebugPrint("No game assigned to this tab\n");
             }
+        } else {
 
-        } else if (dbg_pageIndex == 2 && dbg_tabIndex == 0) {
-            ioDebugPrint("Returning to game thread\n");
-            glfwMakeContextCurrent(nullptr);
-            currentThread->isPaused = false;
-
-        } else if (dbg_pageIndex == 2 && dbg_tabIndex == 1) {
-            // exit game
-            ioDebugPrint("Exiting game thread\n");
-            currentThread->isRunning = false;
-            dbg_pageIndex = 0; // back to home
-            currentThread = nullptr;
         }
 
-        refreshTabs();
     }
 
 }
@@ -162,13 +219,58 @@ void HomeScreen::render() {
     if (!currentThread || (currentThread->isPaused)) {
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(0.15f, 0.05f, 0.15f, 1.0f);
-        // Drawing code goes here
+        glClearColor(1, 1, 1, 1.0f);
 
-        for (size_t i = 0; i < dbg_tabs.size(); ++i)
-        {
-            renderTab(dbg_tabs[i], i);
+
+        if (!currentThread) {
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 3; y++)
+                {
+
+                    int index = x + (y * 4);
+
+                    bool hasTitle = index < titles.size();
+
+                    glUseProgram(uiShader);
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, hasTitle ? appIcon_filled : appIcon_empty);
+                    glUniform1i(glGetUniformLocation(uiShader, "tex"),0);
+
+
+                    if (hasTitle) {
+                        glActiveTexture(GL_TEXTURE1);
+                        glBindTexture(GL_TEXTURE_2D, titles[index].icon_texture);
+                    } else {
+                        glActiveTexture(GL_TEXTURE1);
+                        glBindTexture(GL_TEXTURE_2D, appIcon_empty);
+                    }
+                    glUniform1i(glGetUniformLocation(uiShader, "overlay"), 1);
+                    glUniform1i(glGetUniformLocation(uiShader, "hasOverlay"), hasTitle ? 1 : 0);
+
+
+                    glQuadDraw(5 + (x * 85), 5 + (y * 85), 95, 95, uiShader);
+
+                    if (index == dbg_tabIndex) {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, appIcon_select);
+                        glUniform1i(glGetUniformLocation(uiShader, "tex"), 0);
+                        glUniform1i(glGetUniformLocation(uiShader, "hasOverlay"), 0);
+                        glQuadDraw(15 + (x * 85), 11 + (y * 85), 75, 75, uiShader);
+                    }
+                }
+                
+            }
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, sidebar);
+            glUniform1i(glGetUniformLocation(uiShader, "hasOverlay"), 0);
+            glQuadDraw(355,0,125,272, uiShader);
+        } else {
+
         }
+
     } else if (currentThread) {
 
         glClear(GL_COLOR_BUFFER_BIT);
@@ -188,57 +290,5 @@ int HomeScreen::present()
     }
     glPresent();
     return glRunning();
-}
-
-void HomeScreen::renderTab(const char *text, int index)
-{
-
-    unsigned long color = 0xFFFFFFFF; // White text
-    unsigned long bg = (index == dbg_tabIndex) ? 0xFF0000FF : 0xAAAAAAFF;
-
-
-    glDebugText(color, bg, text);
-}
-
-void HomeScreen::refreshTabs()
-{
-    dbg_tabIndex = 0;
-
-    switch (dbg_pageIndex) {
-        case 0: // home
-            dbg_tabs = {
-                "Launch",
-            };
-            break;
-        case 1: // launch game
-        {
-            dbg_tabs = {
-                "Back\n",
-            };
-
-            int gamesLoaded = this->titles.size();
-
-            if (gamesLoaded == 0) {
-                dbg_tabs[0] = "Back\n(No games found)";
-            }
-
-            for (int i = 0; i < gamesLoaded; i++)
-            {
-                dbg_tabs.push_back(this->titles[i].name);
-            }
-
-            break;
-        }
-        case 2: // pause menu
-        {
-            dbg_tabs = {
-                "Return to Game\n",
-                "Exit Game\n"
-            };
-            break;
-        }
-        default:
-            dbg_tabs = {};
-    }
 }
 

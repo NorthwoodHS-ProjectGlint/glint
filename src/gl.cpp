@@ -48,8 +48,11 @@ void* glSetup()
 
     glfwSwapInterval(1);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // setup debug text texture
-    g_debugTextTexture = LoadTGAFromMemory(bmfont_0, sizeof(bmfont_0));
+    g_debugTextTexture = glGenerateTexture(bmfont_0, sizeof(bmfont_0), 3);
     g_debugFontMap = LoadBMFontBinary(bmfont, sizeof(bmfont));
 
     // create debug text quad
@@ -225,6 +228,68 @@ int glGenerateShader(const char *vertexSrc, const char *fragmentSrc)
     return program;
 }
 
+int glGenerateTexture(int width, int height, const unsigned char *data, int desiredChannels)
+{
+    // 4. Standard OpenGLES Texture Upload
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    
+    // Critical: Font textures often have non-power-of-two widths
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    GLenum format = (desiredChannels == 4) ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    return tex;
+}
+int glGenerateTexture(const unsigned char *data, int dataSize, int desired_channels)
+{
+    
+    int width, height, channels_in_file;
+    // Request 4 components (RGBA) for consistency, but you can use 0 to let it decide.
+
+    unsigned char* image_data = stbi_load_from_memory(
+        data,
+        dataSize,
+        &width,
+        &height,
+        &channels_in_file,
+        desired_channels
+    );
+
+    if (image_data == NULL) {
+        ioDebugPrint("Failed to load TGA image from memory: %s\n", stbi_failure_reason());
+        return 0;
+    }
+
+    // 4. Standard OpenGLES Texture Upload
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    
+    // Critical: Font textures often have non-power-of-two widths
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    GLenum format = (channels_in_file == 4) ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    return tex;
+}
+
+int glGenerateTexture(const char *filePath, int desiredChannels)
+{
+    int size;
+    const void* fileData = fsReadFile(filePath, (size_t*)&size);
+    return glGenerateTexture((const unsigned char*)fileData, size, desiredChannels);
+}
+
 void glDebugText(const char *text)
 {
     glDebugTextFmt("%s", text);
@@ -316,4 +381,17 @@ void glDebugText(unsigned long color, unsigned long bg, const char *text)
 void *glGetContext()
 {
     return g_window;
+}
+
+void glQuadDraw(float x, float y, float width, float height, int shader)
+{
+    glBindVertexArray(g_debugTextVAO);
+    glUseProgram(shader);
+
+    // Set shader uniforms for position, scale, color, character position, etc.
+    glUniform2f(glGetUniformLocation(shader, "position"), x, y);
+    glUniform2f(glGetUniformLocation(shader, "scale"), width, height);
+
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
