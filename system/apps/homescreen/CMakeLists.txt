@@ -3,7 +3,6 @@ project(home_screen)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLINT REQUIRED glint)
 pkg_check_modules(GLFW REQUIRED glfw3)
 
 add_library(home_screen SHARED
@@ -12,12 +11,11 @@ add_library(home_screen SHARED
 )
 
 target_include_directories(home_screen PRIVATE
-    ${GLINT_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
 )
 
 target_link_libraries(home_screen
-    ${GLINT_LIBRARIES}
+    glint
     ${GLFW_LIBRARIES}
 )
 

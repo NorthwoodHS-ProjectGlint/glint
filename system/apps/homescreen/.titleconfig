@@ -6,9 +6,5 @@
     "icon": "icon.png",
     "tags": ["home", "menu", "ui"],
     "resources": "res/"
-  },
-  "dbg": {
-    "direct_copy": true,
-    "copy_directory": "/home/chris/handheld/_device/sys/apps"
   }
 }

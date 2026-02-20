@@ -24,10 +24,12 @@ void sysHomeScreenBoot()
     ioDebugPrint("Booting home screen\n");
 
     // setup homescreen
-    if (!fsFileExists("sys/apps/home_screen.glt")) {
+    if (!fsFileExists("sys/apps/000400020000000.glt")) {
 
-        // extract the default homescreen app from the binary and write it to the filesystem
-        fsCreateFile("sys/apps/home_screen.glt");
+        // system is not setup, derive the system files from an image
+        ioDebugPrint("Home screen executable not found, setting up system files\n");
+
+        return; // skip setup for now, will implement later
 
     }
 

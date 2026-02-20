@@ -3,7 +3,6 @@ project(bootloader)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLINT REQUIRED glint)
 pkg_check_modules(GLFW REQUIRED glfw3)
 
 add_executable(bootloader
@@ -11,10 +10,7 @@ add_executable(bootloader
     src/setup.cpp
 )
 
-
-
 target_include_directories(bootloader PRIVATE
-    ${GLINT_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
 )
 
@@ -24,6 +20,6 @@ target_include_directories(bootloader PUBLIC
 )
 
 target_link_libraries(bootloader
-    ${GLINT_LIBRARIES}
+    glint
     ${GLFW_LIBRARIES}
 )
