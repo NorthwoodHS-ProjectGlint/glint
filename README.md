@@ -41,9 +41,24 @@ sudo pacman -S cmake pkgconfig glfw stb cjson
 
 ## Building
 
-Glint can be built and installed using CMake:
+Glint can be built and installed using CMake or the provided build script.
 
-### Build and Install
+### Quick Build (Recommended)
+
+The easiest way to build and run Glint:
+
+```bash
+sudo sh ./build.sh
+```
+
+This script will:
+- Build and install the Glint library
+- Build the bootloader and homescreen
+- Build the example application from `examples/app-template`
+- Copy the example to `_device/titles/`
+- Launch the bootloader
+
+### Manual Build
 
 From within the `glint/` directory:
 
@@ -89,6 +104,28 @@ mkdir -p device_root && cd device_root
 
 This directory will store system apps and user data.
 
+## Quick Start
+
+To create a new Glint application, use the provided template:
+
+```bash
+# Copy the template
+cp -r examples/app-template my_game
+cd my_game
+
+# Edit the project details
+# - Update .titleconfig with your game's info
+# - Edit src/main.cpp with your game code
+# - Add resources to res/
+
+# Build your game
+mkdir -p _build && cd _build
+cmake ..
+make
+```
+
+Your `.glt` file will be created in the project directory.
+
 ## Project Structure
 
 - `src/` - Core library source code (IO, filesystem, graphics, HID)
@@ -96,6 +133,8 @@ This directory will store system apps and user data.
 - `system/bootloader/` - Bootloader application
 - `system/apps/` - System applications (homescreen, etc.)
 - `tools/` - Build tools (executable creator, resource packer)
+- `examples/` - Example applications and templates
+  - `app-template/` - Ready-to-use application template
 
 ## Development
 
@@ -111,15 +150,20 @@ The Glint library (`libglint`) provides APIs for:
 
 Comprehensive documentation is available in the following files:
 
+- **[examples/app-template/README.md](examples/app-template/README.md)** - Quick start guide for the application template
+  
 - **[BUILDING.md](BUILDING.md)** - Complete build system documentation
+  - Build script usage
   - Two-stage build process
   - `glt_execcreate` tool usage
   - Title configuration format
   - Resource packaging
   - CMake integration
+  - Application template guide
   - Troubleshooting
 
 - **[APPLICATION_FRAMEWORK.md](APPLICATION_FRAMEWORK.md)** - Application development guide
+  - Getting started with the template
   - Required functions (`glattach`, `app_setup`, `app_cycle`, `app_present`, `app_shutdown`)
   - Application lifecycle
   - Pause/resume system
@@ -129,9 +173,10 @@ Comprehensive documentation is available in the following files:
 
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API reference
   - I/O module
-  - Filesystem module
-  - Graphics module
+  - Filesystem module (with resource mounting)
+  - Graphics module (textures, shaders, rendering)
   - HID module (input)
   - Title/Executable module
+  - Resource system (mount points)
   - Usage examples
 

@@ -4,6 +4,27 @@
 
 The Glint build system uses CMake and custom tooling to create executable packages that can run on the Glint handheld operating system. The build process involves compiling shared libraries and packaging them with resources into `.glt` executable files.
 
+## Quick Build Script
+
+The easiest way to build Glint is using the provided `build.sh` script:
+
+```bash
+sudo sh ./build.sh
+```
+
+**What it does:**
+1. Creates `_build` directory
+2. Builds and installs the Glint library
+3. Builds the bootloader and system applications
+4. Builds the example application from `examples/app-template`
+5. Copies the example to `_device/titles/`
+6. Launches the bootloader
+
+**When to use:**
+- First time setup
+- Testing the complete system
+- Rapid development iteration
+
 ## Build Architecture
 
 ### Two-Stage Build Process
@@ -233,6 +254,49 @@ After building:
 - **Cause**: Icon path incorrect or format unsupported
 - **Solution**: Use PNG format, verify path in `.titleconfig`
 
+## Application Template
+
+The `examples/app-template` directory contains a ready-to-use template for creating new applications.
+
+### Using the Template
+
+```bash
+# Copy the template
+cp -r examples/app-template my_game
+cd my_game
+
+# Customize your game
+# 1. Edit .titleconfig - update id, name, description
+# 2. Replace icon.png with your 128x128 icon
+# 3. Edit src/main.cpp with your game logic
+# 4. Add resources (images, sounds) to res/
+
+# Build
+mkdir -p _build && cd _build
+cmake ..
+make
+cd ..
+
+# Your game is now in my_game/[titleid].glt
+```
+
+### Template Contents
+
+- **CMakeLists.txt** - Pre-configured build setup
+- **.titleconfig** - Title metadata (customize this!)
+- **icon.png** - Placeholder icon (replace with yours)
+- **src/main.cpp** - Minimal working application with all 5 required functions
+- **res/** - Resource directory for your assets
+- **build.sh** - Simple build script
+
+### Template Code Structure
+
+The template includes:
+- ✅ All 5 required functions (`glattach`, `app_setup`, `app_cycle`, `app_present`, `app_shutdown`)
+- ✅ Basic input handling (ESC to pause)
+- ✅ Proper GL initialization
+- ✅ Comments showing where to add your code
+
 ## Best Practices
 
 1. **Use pkg-config**: Always use `pkg_check_modules` for dependencies
@@ -243,3 +307,4 @@ After building:
 6. **Parallel builds**: Use `-j$(nproc)` for faster compilation
 7. **Icon format**: Use PNG format for icons, will be auto-converted to 128x128 RGB
 8. **Resource access**: Access resources via mount points (e.g., "H:/sprites/player.png")
+9. **Start from template**: Use `examples/app-template` as a starting point for new projects

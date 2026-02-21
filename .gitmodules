@@ -1,0 +1,3 @@
+[submodule "examples/app-template"]
+	path = examples/app-template
+	url = https://github.com/NorthwoodHS-ProjectGlint/app-template

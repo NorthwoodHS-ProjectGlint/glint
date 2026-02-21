@@ -4,6 +4,19 @@
 
 Glint applications are shared libraries that implement specific C-style functions and link against the Glint library. Applications run in separate threads managed by the system's title launcher.
 
+## Getting Started
+
+The fastest way to create a new Glint application is to use the provided template:
+
+```bash
+cp -r examples/app-template my_game
+cd my_game
+# Edit .titleconfig and src/main.cpp
+sh ./build.sh
+```
+
+See [examples/app-template/README.md](examples/app-template/README.md) for detailed instructions.
+
 ## Required Functions
 
 Every Glint application **must** implement these five exported C functions:
