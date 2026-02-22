@@ -43,15 +43,34 @@ void *execExtract(const Executable* exec)
 
     // Create an in-memory file
     int fd = memfd_create("game", MFD_CLOEXEC);
+    if (fd < 0) {
+        ioDebugPrint("memfd_create failed\n");
+        return nullptr;
+    }
 
     // Write your .so data into it
-    write(fd, exec->executable, exec->executable_size);
+    ssize_t written = write(fd, exec->executable, exec->executable_size);
+    if (written != (ssize_t)exec->executable_size) {
+        ioDebugPrint("Failed to write executable to memory file\n");
+        close(fd);
+        return nullptr;
+    }
 
     // dlopen it via the /proc/self/fd trick
     char path[64];
     snprintf(path, sizeof(path), "/proc/self/fd/%d", fd);
 
-    void* handle = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
+
+    void* handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);  // Changed from RTLD_LAZY | RTLD_GLOBAL
+
+    ioDebugPrint("Executable written to memory file: %s\n", path);
+
+
+    if (!handle) {
+        ioDebugPrint("dlopen failed: %s\n", dlerror());
+        close(fd);
+        return nullptr;
+    }
     return handle;
 }
 
@@ -69,7 +88,7 @@ void execMountResource(const Executable *exec, char mountPoint[3])
 
     for (int i = 0; i < pack.header.resource_count; i++)
     {
-        ioDebugPrint("Mounting resource: %s (size: %u bytes)\n", pack.entries[i].path, pack.entries[i].data_size);
+        ioDebugPrint("Mounting resource: %s (size: %u bytes) (path length: %u)\n", pack.entries[i].path, pack.entries[i].data_size, pack.entries[i].path_length);
         resourceMap[pack.entries[i].path] = pack.entries[i];
     }
     g_mountedResources[mountPoint] = resourceMap;

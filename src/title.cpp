@@ -41,7 +41,6 @@ void p_exeTitle(void* handle, TitleThread* thread, void* glCtx) {
     // app cycle
     while (thread->isRunning) {
 
-
         int result = execCallHandleWithResult(handle, "app_cycle");
         // 0 is continue
         // 1 is exit

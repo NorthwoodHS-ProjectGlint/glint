@@ -14,6 +14,9 @@ static unsigned int g_debugTextVAO = 0;
 static unsigned int g_debugTextShader = 0; // Placeholder for shader program ID
 static int cursorY = 0; // Moved cursorY declaration here to avoid unused variable warning
 
+static float lastTimestamp = 0.0f;
+static float deltaTime = 0.0f;
+
 void* glSetup()
 {
     if (!glfwInit()) {
@@ -54,6 +57,8 @@ void* glSetup()
     // setup debug text texture
     g_debugTextTexture = glGenerateTexture(bmfont_0, sizeof(bmfont_0), 3);
     g_debugFontMap = LoadBMFontBinary(bmfont, sizeof(bmfont));
+
+    ioDebugPrint("Debug text texture generated with ID: %u\n", g_debugTextTexture);
 
     // create debug text quad
     glGenBuffers(1, &g_debugTextVBO);
@@ -176,6 +181,20 @@ void glPresent()
     hidFlush(); // Flush input state before checking if we should close
     glfwSwapBuffers(g_window);
     cursorY = 0; // Reset cursor Y position after presenting
+
+    float currentTimestamp = glfwGetTime();
+    deltaTime = currentTimestamp - lastTimestamp;
+    lastTimestamp = currentTimestamp;
+}
+
+float glGetTime()
+{
+    return glfwGetTime();
+}
+
+float glGetDeltaTime()
+{
+    return deltaTime;
 }
 
 int glGenerateShader(const char *vertexSrc, const char *fragmentSrc)
@@ -343,6 +362,7 @@ void glDebugText(unsigned long color, unsigned long bg, const char *text)
             // You would need to set up your shader and draw calls here
 
             glBindVertexArray(g_debugTextVAO);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, g_debugTextTexture);
 
             glUseProgram(g_debugTextShader);

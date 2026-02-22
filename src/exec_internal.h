@@ -100,18 +100,18 @@ inline resource_pack_file read_resource_pack(const void* data, size_t data_size)
         std::memcpy(&entry.path_length, ptr + offset, sizeof(entry.path_length));
         offset += sizeof(entry.path_length);
 
-        // Read path
-        entry.path = new char[entry.path_length];
+        // Read path - allocate extra byte for null terminator
+        entry.path = new char[entry.path_length + 1];
         std::memcpy(entry.path, ptr + offset, entry.path_length);
+        entry.path[entry.path_length] = '\0';  // Null terminate
         offset += entry.path_length;
 
         // Read data_size
         std::memcpy(&entry.data_size, ptr + offset, sizeof(entry.data_size));
         offset += sizeof(entry.data_size);
 
-        // Read data
-        entry.data = new char[entry.data_size];
-        std::memcpy(const_cast<char*>(static_cast<const char*>(entry.data)), ptr + offset, entry.data_size);
+        // Read data - no need to allocate, just point to existing data
+        entry.data = ptr + offset;
         offset += entry.data_size;
     }
 

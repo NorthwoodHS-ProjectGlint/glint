@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <glint/sys/title.h>
+#include <glint/glint.h>
 
 class HomeScreen {
 public:
@@ -11,7 +11,7 @@ public:
     int present();
 
 private:
-    int dbg_tabIndex = 0;
+    int gameCarouselIndex = 0;
 
     std::vector<TitleInfo> titles = {};
 
@@ -21,14 +21,42 @@ private:
     void onGameExit();
     void onGameReturn();
 
+    void loadTitles();
+    void loadTextures();
+    void buildShaders();
+    void buildUi();
+    void buildBackground();
+    void buildSidebar();
+    void buildCarousel();
+    void buildGameInfo();
+
+    UiFrame& addFrame(float x, float y, float width, float height, UiFrame* parent = nullptr);
+    void setSimpleQuad(UiFrame& frame, int shader, int texture);
+
 
     // assets
     int appIcon_empty;
     int appIcon_filled;
-    int sidebar;
-    int sidebar_button;
-
     int appIcon_select;
     
+    int sidebar_frame;
+    int sidebar_button;
+    int sidebar_mii_icon;
+
+    int achievement_frame;
+    int achievement_container;
+
+    int background_gradient;
+    int background_test_image;
+    
+    int uiAppShader;
     int uiShader;
+
+    // ui
+    UiFrame homeFrame;
+    UiFrame* gameCarousel;
+    UiFrame* gameAchievementPanel;
+    UiFrame* backgroundFrame;
+
+    UiFrame pauseFrame;
 };

@@ -4,3 +4,5 @@
 #include "gl/gl.h"
 #include "hid/hid.h"
 #include "sys/title.h"
+#include "gl/ui2d.h"
+#include "math/math.h"

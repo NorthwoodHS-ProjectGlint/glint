@@ -14,6 +14,8 @@ add_library(glint SHARED
     src/gl.cpp
     src/hid.cpp
     src/title.cpp
+    src/ui2d.cpp
+    src/math.cpp
 
     src/glad.c
 )
@@ -53,3 +55,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/glint.pc
 add_subdirectory(tools/glt_execcreate)
 add_subdirectory(system/bootloader)
 add_subdirectory(system/apps/homescreen)
+
+add_subdirectory(examples/app-template)

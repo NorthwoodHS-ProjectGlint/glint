@@ -4,6 +4,8 @@ void* glSetup();
 bool glRunning();
 void glAttach(void* ctx);
 void glPresent();
+float glGetTime();
+float glGetDeltaTime();
 
 int glGenerateShader(const char* vertexSrc, const char* fragmentSrc);
 int glGenerateTexture(int width, int height, const unsigned char* data, int desiredChannels);

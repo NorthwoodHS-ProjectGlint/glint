@@ -47,8 +47,12 @@ resource_pack_file create_resource_pack(const char* resource_directory, size_t* 
 
         resource_entry entry;
         entry.path_length = std::filesystem::relative(path, resource_directory).string().length();
-        entry.path = new char[entry.path_length];
-        std::memcpy(entry.path, std::filesystem::relative(path, resource_directory).string().c_str(), entry.path_length);
+
+
+        entry.path = new char[entry.path_length + 1];
+        std::string rel = std::filesystem::relative(path, resource_directory).string();
+        std::memcpy(entry.path, rel.c_str(), entry.path_length);
+        entry.path[entry.path_length] = '\0';
         entry.data_size = std::filesystem::file_size(path);
         entry.data = read_file(path.string().c_str(), nullptr);
         res_pack.entries[i] = entry;

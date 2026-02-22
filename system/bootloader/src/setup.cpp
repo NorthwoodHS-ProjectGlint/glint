@@ -47,7 +47,11 @@ void sysHomeScreenBoot()
         return;
     }
 
+    ioDebugPrint("Home screen executable extracted, handle: %p\n", handle);
+
     execMountResource(&home_screen_exec, "S:/");
+
+    ioDebugPrint("Home screen resources mounted\n");
 
     void* window = glSetup();
 
