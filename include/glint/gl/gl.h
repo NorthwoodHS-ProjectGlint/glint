@@ -1,11 +1,13 @@
 #pragma once
 
+#include "glint/types/math.h"
+
 void* glSetup();
 bool glRunning();
 void glAttach(void* ctx);
 void glPresent();
-float glGetTime();
-float glGetDeltaTime();
+double glGetTime();
+double glGetDeltaTime();
 
 int glGenerateShader(const char* vertexSrc, const char* fragmentSrc);
 int glGenerateTexture(int width, int height, const unsigned char* data, int desiredChannels);
@@ -21,3 +23,8 @@ void glDebugText(unsigned long color, unsigned long bg,const char* text);
 void* glGetContext();
 
 void glQuadDraw(float x, float y, float width, float height, int shader);
+void glCubeDraw(mat4 model, int shader);
+
+void glCameraSetOrtho(float left, float right, float bottom, float top);
+void glCameraSetPerspective(float fovY, float aspect, float nearZ, float farZ);
+void glCameraSetView(vec3 eye, vec3 center, vec3 up);

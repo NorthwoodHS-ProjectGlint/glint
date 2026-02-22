@@ -1,0 +1,10 @@
+{
+  "title": {
+    "id": "000400000000001",
+    "name": "Cube Example",
+    "description": "A simple 3D cube example.",
+    "icon": "icon.png",
+    "tags": [],
+    "resources": "res/"
+  }
+}

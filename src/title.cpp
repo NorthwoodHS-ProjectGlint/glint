@@ -41,10 +41,17 @@ void p_exeTitle(void* handle, TitleThread* thread, void* glCtx) {
     // app cycle
     while (thread->isRunning) {
 
+        double globalTime = glfwGetTime();
+
+        glfwSetTime(thread->threadTime);
+
         int result = execCallHandleWithResult(handle, "app_cycle");
         // 0 is continue
         // 1 is exit
         // 2 is pause
+
+        glfwSetTime(globalTime);
+        thread->threadTime += glGetDeltaTime();
 
         if (result == 1) {
             ioDebugPrint("Title requested exit\n");
@@ -57,6 +64,8 @@ void p_exeTitle(void* handle, TitleThread* thread, void* glCtx) {
         }
         
         thread->presentResult = execCallHandleWithResult(handle, "app_present");
+
+
 
         // if pausing to home screen, return to the main thread
         if (thread->isPaused) {

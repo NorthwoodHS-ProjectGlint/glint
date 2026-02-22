@@ -46,6 +46,10 @@ This stage:
 - Installs `glint.pc` pkg-config file
 - Builds and installs the `glt_execcreate` tool
 
+This stage automatically builds example applications:
+- **app-template**: Basic 2D template application
+- **graphics/cube**: 3D cube rendering example
+
 #### Stage 2: Application Build
 ```bash
 mkdir -p _build && cd _build
@@ -254,6 +258,46 @@ After building:
 - **Cause**: Icon path incorrect or format unsupported
 - **Solution**: Use PNG format, verify path in `.titleconfig`
 
+## Examples
+
+Glint includes example applications in `examples/`:
+
+### App Template (`examples/app-template/`)
+
+A minimal 2D game template with:
+- Basic window and rendering setup
+- Input handling
+- UI framework usage
+- Resource loading
+- File I/O operations
+
+### Graphics Cube (`examples/graphics/cube/`)
+
+A 3D rendering example demonstrating:
+- 3D perspective camera setup
+- Model transformations (rotation, scale)
+- Cube rendering with shader
+- Depth testing and 3D mathematics
+
+### Using an Example as a Starting Point
+
+```bash
+# Copy the app template
+cp -r examples/app-template my_game
+cd my_game
+
+# Or copy the 3D example
+cp -r examples/graphics/cube my_3d_game
+cd my_3d_game
+
+# Customize and build
+# Edit .titleconfig, icon.png, and src/main.cpp
+mkdir -p _build && cd _build
+cmake ..
+make
+cd ..
+```
+
 ## Application Template
 
 The `examples/app-template` directory contains a ready-to-use template for creating new applications.
@@ -307,4 +351,5 @@ The template includes:
 6. **Parallel builds**: Use `-j$(nproc)` for faster compilation
 7. **Icon format**: Use PNG format for icons, will be auto-converted to 128x128 RGB
 8. **Resource access**: Access resources via mount points (e.g., "H:/sprites/player.png")
-9. **Start from template**: Use `examples/app-template` as a starting point for new projects
+9. **3D graphics**: Use `glCubeDraw()`, camera functions, and `mat4` transformations for 3D rendering
+10. **Start from examples**: Use `examples/app-template` for 2D or `examples/graphics/cube` for 3D

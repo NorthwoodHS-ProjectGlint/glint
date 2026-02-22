@@ -71,6 +71,9 @@ struct UiFrame {
     ColorRGB color = {1,1,1};
     int texture = -1;
 
+    bool forceAlpha = false;
+    bool visible = true;
+
     int shader = -1;
     bool canSelect = true;
 

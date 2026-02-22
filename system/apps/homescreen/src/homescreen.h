@@ -15,8 +15,10 @@ private:
 
     std::vector<TitleInfo> titles = {};
 
+    int currentTitleIndex = -1;
     TitleThread* currentThread = nullptr;
     bool isPauseMenuVisible = false;
+    bool isReturningToGame = false;
 
     void onGameExit();
     void onGameReturn();
@@ -48,6 +50,7 @@ private:
 
     int background_gradient;
     int background_test_image;
+    int background_screenshot;
     
     int uiAppShader;
     int uiShader;

@@ -288,6 +288,20 @@ extern "C" void app_shutdown() {
 - **Fixed resolution**: 480x272 pixels (PSP-like resolution)
 - **Screen coordinates**: Origin at top-left (0,0 to 480,272)
 
+### Rendering Capabilities
+
+Applications have access to a full 3D graphics pipeline:
+
+- **2D Rendering**: Quads with textures and shaders (`glQuadDraw()`)  
+- **3D Rendering**: Cube primitives with perspective projection (`glCubeDraw()`)
+- **Camera Control**: Orthographic and perspective projections, view matrix setup
+- **Texture Loading**: PNG, JPG, TGA, BMP, and other image formats
+- **Shader Support**: Compile and link vertex/fragment shaders
+- **Depth Testing**: Full 3D depth buffer support
+- **Math Library**: Complete vec2/3/4 and 4x4 matrix types with operators
+
+See [examples/graphics/cube/](examples/graphics/cube/) for a 3D rendering example.
+
 ### Input Limitations
 
 - **Polling only**: No event callbacks for input

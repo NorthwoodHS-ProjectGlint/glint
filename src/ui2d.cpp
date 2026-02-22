@@ -532,16 +532,22 @@ void UiFrame::draw_internal()
     float px = x;
     float py = y;
     float pa = alpha;
+    bool pv = visible;
 
     x += std::get<0>(layoutPos);
     y += std::get<1>(layoutPos);
     alpha *= parent ? parent->alpha : 1.0f;
+    visible = pv && (parent ? parent->visible : true);
+
+    if (forceAlpha) {
+        alpha = pa;
+    }
 
     const UiEffectSettings& effects = effectSettings;
     bool hasTexture = texture >= 0;
     bool hasExplicitRender = (onRender != nullptr) || hasTexture || (shader != -1);
 
-    if (effects.dropShadowEnabled && hasTexture) {
+    if (visible && effects.dropShadowEnabled && hasTexture) {
         glUseProgram(uiShadowShader);
         glUniform1f(glGetUniformLocation(uiShadowShader, "alphaValue"), alpha);
         glUniform1f(glGetUniformLocation(uiShadowShader, "blurRadius"), effects.dropShadowBlur);
@@ -558,7 +564,7 @@ void UiFrame::draw_internal()
         glQuadDraw(x + effects.dropShadowOffsetX, y + effects.dropShadowOffsetY, width, height, uiShadowShader);
     }
 
-    if (this->onRender) {
+    if (visible && this->onRender) {
         int shaderToUse = (shader != -1) ? shader : uiDefaultShader;
         glUseProgram(shaderToUse);
         glUniform1f(glGetUniformLocation(shaderToUse, "alphaValue"), alpha);
@@ -569,7 +575,7 @@ void UiFrame::draw_internal()
         glUniform1i(glGetUniformLocation(shaderToUse, "tex"), 0);
 
         this->onRender(*this);
-    } else if (hasExplicitRender) {
+    } else if (visible && hasExplicitRender) {
         if (effects.blurEnabled && hasTexture) {
             ui2dRunBlurPasses(*this, effectSettings, alpha);
         } else {
@@ -586,7 +592,7 @@ void UiFrame::draw_internal()
         }
     }
 
-    if (effects.innerShadowEnabled && hasTexture) {
+    if (visible && effects.innerShadowEnabled && hasTexture) {
         glUseProgram(uiInnerShadowShader);
         glUniform1f(glGetUniformLocation(uiInnerShadowShader, "alphaValue"), alpha);
         glUniform1f(glGetUniformLocation(uiInnerShadowShader, "blurRadius"), effects.innerShadowBlur);
@@ -613,6 +619,7 @@ void UiFrame::draw_internal()
     x = px;
     y = py;
     alpha = pa;
+    visible = pv;
 }
 
 std::tuple<float, float> UiFrame::getLayoutPosition()

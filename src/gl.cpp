@@ -9,13 +9,22 @@
 static GLFWwindow* g_window = nullptr;
 static unsigned int g_debugTextTexture = 0;
 static std::map<uint32_t, BMFChar> g_debugFontMap;
-static unsigned int g_debugTextVBO = 0;
-static unsigned int g_debugTextVAO = 0;
+static unsigned int g_debugQuadVBO = 0;
+static unsigned int g_debugQuadVAO = 0;
+
+static unsigned int g_debugCubeVBO = 0;
+static unsigned int g_debugCubeEBO = 0;
+static unsigned int g_debugCubeVAO = 0;
+
 static unsigned int g_debugTextShader = 0; // Placeholder for shader program ID
+static unsigned int g_defaultShader = 0; // Placeholder for default shader program ID
 static int cursorY = 0; // Moved cursorY declaration here to avoid unused variable warning
 
-static float lastTimestamp = 0.0f;
-static float deltaTime = 0.0f;
+static double lastTimestamp = 0.0;
+static double deltaTime = 1.0 / 60.0; // Default to 60 FPS
+
+static mat4 projectionMatrix;
+static mat4 viewMatrix;
 
 void* glSetup()
 {
@@ -60,32 +69,58 @@ void* glSetup()
 
     ioDebugPrint("Debug text texture generated with ID: %u\n", g_debugTextTexture);
 
-    // create debug text quad
-    glGenBuffers(1, &g_debugTextVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, g_debugTextVBO);
-    
-    // Define a simple quad for debug text rendering
-    float quadVertices[] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        0.0f, 1.0f, 0.0f, 1.0f
-    };
-    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    {
+        // create debug text quad
+        glGenBuffers(1, &g_debugQuadVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, g_debugQuadVBO);
+        
+        // Define a simple quad for debug text rendering
+        float quadVertices[] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f
+        };
+        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glGenVertexArrays(1, &g_debugTextVAO);
-    glBindVertexArray(g_debugTextVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, g_debugTextVBO);
-    glEnableVertexAttribArray(0); // Position
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1); // TexCoords
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+        glGenVertexArrays(1, &g_debugQuadVAO);
+        glBindVertexArray(g_debugQuadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, g_debugQuadVBO);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1); // TexCoords
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    {
+        glGenBuffers(1, &g_debugCubeVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, g_debugCubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glGenBuffers(1, &g_debugCubeEBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_debugCubeEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        glGenVertexArrays(1, &g_debugCubeVAO);
+        glBindVertexArray(g_debugCubeVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, g_debugCubeVBO);
+        glEnableVertexAttribArray(0); // Position
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1); // Normal
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2); // TexCoords
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
     // generate shader for debug text rendering
     g_debugTextShader = glGenerateShader(
@@ -141,6 +176,47 @@ void* glSetup()
         )"
     );
 
+    // generate shader for default rendering
+    g_defaultShader = glGenerateShader(
+        // Vertex shader
+        R"(
+        #version 300 es
+        layout(location = 0) in vec3 aPos;
+        layout(location = 1) in vec3 aNormal;
+        layout(location = 2) in vec2 aTexCoord;
+        
+        out vec3 Position;
+        out vec3 Normal;
+        out vec2 TexCoord;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        void main() {
+            Position = aPos;
+            Normal = mat3(transpose(inverse(model))) * aNormal; // Transform normal to world space
+            TexCoord = aTexCoord;
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+        }
+        )",
+        // Fragment shader
+        R"(
+        #version 300 es
+        precision mediump float;
+        
+        out vec4 FragColor;
+
+        in vec3 Position;
+        in vec3 Normal;
+        in vec2 TexCoord;
+        uniform vec3 color;
+        
+        void main() {
+            FragColor = vec4(Normal, 1.0);
+        }
+        )"
+    );
 
     return window;
 }
@@ -182,17 +258,19 @@ void glPresent()
     glfwSwapBuffers(g_window);
     cursorY = 0; // Reset cursor Y position after presenting
 
-    float currentTimestamp = glfwGetTime();
+
+
+    double currentTimestamp = glfwGetTime();
     deltaTime = currentTimestamp - lastTimestamp;
     lastTimestamp = currentTimestamp;
 }
 
-float glGetTime()
+double glGetTime()
 {
     return glfwGetTime();
 }
 
-float glGetDeltaTime()
+double glGetDeltaTime()
 {
     return deltaTime;
 }
@@ -358,10 +436,10 @@ void glDebugText(unsigned long color, unsigned long bg, const char *text)
         auto it = g_debugFontMap.find(c);
         if (it != g_debugFontMap.end()) {
             const BMFChar& ch = it->second;
-            // Render character 'ch' using g_debugTextTexture and the quad defined in g_debugTextVBO
+            // Render character 'ch' using g_debugTextTexture and the quad defined in g_debugQuadVBO
             // You would need to set up your shader and draw calls here
 
-            glBindVertexArray(g_debugTextVAO);
+            glBindVertexArray(g_debugQuadVAO);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, g_debugTextTexture);
 
@@ -405,7 +483,7 @@ void *glGetContext()
 
 void glQuadDraw(float x, float y, float width, float height, int shader)
 {
-    glBindVertexArray(g_debugTextVAO);
+    glBindVertexArray(g_debugQuadVAO);
     glUseProgram(shader);
 
     // Set shader uniforms for position, scale, color, character position, etc.
@@ -414,4 +492,66 @@ void glQuadDraw(float x, float y, float width, float height, int shader)
 
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void glCubeDraw(mat4 model, int shader)
+{
+
+    if (shader == 0) {
+        shader = g_defaultShader;
+    }
+
+    glBindVertexArray(g_debugCubeVAO);
+    glUseProgram(shader);
+
+    glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, model.m);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, viewMatrix.m);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, projectionMatrix.m);
+    glUniform3f(glGetUniformLocation(shader, "color"), 1.0f, 1.0f, 1.0f);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_debugCubeEBO);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+}
+
+void glCameraSetOrtho(float left, float right, float bottom, float top)
+{
+    projectionMatrix = mat4();
+    projectionMatrix.m[0] = 2.0f / (right - left);
+    projectionMatrix.m[5] = 2.0f / (top - bottom);
+    projectionMatrix.m[10] = -1.0f;
+    projectionMatrix.m[12] = -(right + left) / (right - left);
+    projectionMatrix.m[13] = -(top + bottom) / (top - bottom);
+    projectionMatrix.m[15] = 1.0f;
+}
+
+void glCameraSetPerspective(float fovY, float aspect, float nearZ, float farZ)
+{
+    projectionMatrix = mat4();
+    float f = 1.0f / tanf(fovY * 0.5f);
+    projectionMatrix.m[0] = f / aspect;
+    projectionMatrix.m[5] = f;
+    projectionMatrix.m[10] = (farZ + nearZ) / (nearZ - farZ);
+    projectionMatrix.m[11] = -1.0f;
+    projectionMatrix.m[14] = (2.0f * farZ * nearZ) / (nearZ - farZ);
+}
+
+void glCameraSetView(vec3 eye, vec3 center, vec3 up)
+{
+    vec3 f = (center - eye) * (1.0f / sqrtf((center - eye).dot(center - eye)));
+    vec3 s = f.cross(up) * (1.0f / sqrtf(f.cross(up).dot(f.cross(up))));
+    vec3 u = s.cross(f);
+    
+    viewMatrix = mat4::identity();
+    viewMatrix.m[0] = s.x;
+    viewMatrix.m[4] = s.y;
+    viewMatrix.m[8] = s.z;
+    viewMatrix.m[1] = u.x;
+    viewMatrix.m[5] = u.y;
+    viewMatrix.m[9] = u.z;
+    viewMatrix.m[2] = -f.x;
+    viewMatrix.m[6] = -f.y;
+    viewMatrix.m[10] = -f.z;
+    viewMatrix.m[12] = -s.dot(eye);
+    viewMatrix.m[13] = -u.dot(eye);
+    viewMatrix.m[14] = f.dot(eye);
 }

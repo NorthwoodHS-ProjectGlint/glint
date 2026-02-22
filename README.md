@@ -146,11 +146,21 @@ The Glint library (`libglint`) provides APIs for:
 - **Title/Game management** (`title.cpp`)
 - **I/O operations** (`io.cpp`)
 
+## Examples
+
+Glint includes sample applications to help you get started:
+
+- **[examples/app-template/](examples/app-template/)** - Basic template for 2D applications with UI
+- **[examples/graphics/cube/](examples/graphics/cube/)** - 3D rendering example showing cube with transformations and camera control
+
+Both examples are automatically built and included in the bootloader.
+
 ## Documentation
 
 Comprehensive documentation is available in the following files:
 
 - **[examples/app-template/README.md](examples/app-template/README.md)** - Quick start guide for the application template
+- **[examples/graphics/cube/README.md](examples/graphics/cube/README.md)** - 3D graphics example guide
   
 - **[BUILDING.md](BUILDING.md)** - Complete build system documentation
   - Build script usage

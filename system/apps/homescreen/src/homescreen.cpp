@@ -66,7 +66,18 @@ void HomeScreen::loadTextures()
     background_gradient = glGenerateTexture("S:/BackgroundFade.png", 4);
     background_test_image = glGenerateTexture("S:/BackgroundTest.png", 4);
 
-    ioDebugPrint("App icons loaded: empty=%d, filled=%d, select=%d\n", appIcon_empty, appIcon_filled, appIcon_select);
+    {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 480, 272, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        background_screenshot = tex;
+
+
+    }
+
 }
 
 void HomeScreen::buildShaders()
@@ -196,7 +207,7 @@ void HomeScreen::buildUi()
 
 void HomeScreen::buildBackground()
 {
-    UiFrame& bgFrame = addFrame(-26.67, -14, 533.33, 300);
+    UiFrame& bgFrame = addFrame(0, 0, 480, 272);
     //bgFrame.color = {0.25f, 0.25f, 0.25f};
     bgFrame.shader = uiShader;
     bgFrame.texture = background_test_image;
@@ -215,6 +226,7 @@ void HomeScreen::buildSidebar()
     setSimpleQuad(sidebarFrame, uiShader, sidebar_frame);
 
     UiFrame& sidebar = addFrame(0, 27, 62, 224, &sidebarFrame);
+    sidebar.visible = true;
 
     auto& layout = sidebar.getLayoutSettings();
     layout.type = UiLayoutSettings::Vertical;
@@ -243,6 +255,7 @@ void HomeScreen::buildCarousel()
     layout.spacingY = 15;
     layout.autoSizeHeight = true;
 
+    // exit/shutdown button
     {
         float size = 100;
         UiFrame& button = addFrame(0, 0, size, size, &carousel);
@@ -259,11 +272,11 @@ void HomeScreen::buildCarousel()
             }
 
             if (gameCarouselIndex == i) {
-                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 15);
             } else {
-                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 15);
             }
 
             glActiveTexture(GL_TEXTURE0);
@@ -286,7 +299,14 @@ void HomeScreen::buildCarousel()
             }
         };
 
-        button.onClick = [](UiFrame& frame) {
+        button.onClick = [this](UiFrame& frame) {
+            if (currentThread) {
+                onGameExit();
+
+                currentThread = nullptr;
+            } else {
+                ioDebugPrint("No game is currently running\n");
+            }
         };
     }
 
@@ -305,11 +325,11 @@ void HomeScreen::buildCarousel()
             }
 
             if (i + 1 == gameCarouselIndex) {
-                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 15);
             } else {
-                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 15);
             }
 
             bool hasTitle = i < titles.size();
@@ -342,22 +362,33 @@ void HomeScreen::buildCarousel()
         button.onClick = [this, i](UiFrame& frame) {
             int gameIndex = i;
             if (gameIndex >= 0 && gameIndex < titles.size()) {
-                const char* gamePath = nullptr;
+                if (currentThread) {
+                    if (currentTitleIndex == gameIndex) {
+                        // game is already running, return to it
+                        isReturningToGame = true;
+                        return;
+                    }
+                    // add a prompt to confirm exiting the current game
+                    return;
+                } else {
+                    const char* gamePath = nullptr;
 
-                {
-                    char full_path[256];
-                    strcpy(full_path, "titles/");
-                    strcat(full_path, titles[gameIndex].id);
-                    strcat(full_path, ".glt");
-                    gamePath = full_path;
+                    {
+                        char full_path[256];
+                        strcpy(full_path, "titles/");
+                        strcat(full_path, titles[gameIndex].id);
+                        strcat(full_path, ".glt");
+                        gamePath = full_path;
+                    }
+
+                    ioDebugPrint("Launching game: %s\n", gamePath);
+
+                    Executable exec = execLoad(gamePath);
+                    currentThread = titleLaunch(&exec);
+                    currentTitleIndex = gameIndex;
+
+                    ioDebugPrint("Game thread launched\n");
                 }
-
-                ioDebugPrint("Launching game: %s\n", gamePath);
-
-                Executable exec = execLoad(gamePath);
-                currentThread = titleLaunch(&exec);
-
-                ioDebugPrint("Game thread launched\n");
             } else {
                 ioDebugPrint("No game assigned to this tab\n");
             }
@@ -381,11 +412,11 @@ void HomeScreen::buildCarousel()
             }
 
             if (gameCarouselIndex == i) {
-                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 125, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 125, glGetDeltaTime() * 15);
             } else {
-                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 10);
-                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 10);
+                frame.width = lerp(frame.width, 100, glGetDeltaTime() * 15);
+                frame.height = lerp(frame.height, 100, glGetDeltaTime() * 15);
             }
 
             glActiveTexture(GL_TEXTURE0);
@@ -416,6 +447,7 @@ void HomeScreen::buildCarousel()
 void HomeScreen::buildGameInfo()
 {
     UiFrame& infoFrame = addFrame(73, 42, 215, 230);
+    infoFrame.visible = true;
 
     //UiFrame& titleText = addFrame(72, 42, 215, 27, &infoFrame);
     //setSimpleQuad(titleText, uiShader, 0);
@@ -429,6 +461,7 @@ void HomeScreen::buildGameInfo()
     gameAchievementPanel = &achievContainer;
 
     UiFrame& achievFrameContainer = addFrame(5, 5, 0, 0, &achievContainer);
+    achievFrameContainer.visible = true;
     auto& layout = achievFrameContainer.getLayoutSettings();
     layout.type = UiLayoutSettings::Vertical;
     layout.paddingTop = 5;
@@ -442,6 +475,7 @@ void HomeScreen::buildGameInfo()
     for (int i = 0; i < 1; i++) {
         UiFrame& achievFrame = addFrame(0, 0, 180, 37.5f, &achievFrameContainer);
         achievFrame.getLayoutSettings().relativeChildren = true;
+        achievFrame.visible = true;
 
         UiFrame& achievFrameBG = addFrame(0, 0, 180, 37.5f, &achievFrame);
         setSimpleQuad(achievFrameBG, uiShader, achievement_frame);
@@ -463,6 +497,8 @@ void HomeScreen::onGameExit()
     GLFWwindow* window = (GLFWwindow*)glGetContext();
     glfwMakeContextCurrent(window);
 
+    glDisable(GL_DEPTH_TEST);
+
     isPauseMenuVisible = false;
 
     ioDebugPrint("Game thread exited\n");
@@ -474,12 +510,37 @@ void HomeScreen::onGameReturn()
     GLFWwindow* window = (GLFWwindow*)glGetContext();
     glfwMakeContextCurrent(window);
 
+
+    glDisable(GL_DEPTH_TEST);
+
+    int width = 480, height = 272, channels = 4;
+    GLubyte* pixels = new GLubyte[channels * width * height];
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+    // Flip vertically
+    int rowSize = width * channels;
+    GLubyte* temp = new GLubyte[rowSize];
+    for (int y = 0; y < height / 2; y++) {
+        GLubyte* top    = pixels + y * rowSize;
+        GLubyte* bottom = pixels + (height - 1 - y) * rowSize;
+        memcpy(temp, top, rowSize);
+        memcpy(top, bottom, rowSize);
+        memcpy(bottom, temp, rowSize);
+    }
+    delete[] temp;
+
+    glBindTexture(GL_TEXTURE_2D, background_screenshot);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    delete[] pixels;
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     // show pause menu
     isPauseMenuVisible = true;
 
+
+
     ioDebugPrint("Game thread paused\n");
 }
-
 
 void HomeScreen::update() {
     // Game logic goes here later
@@ -516,11 +577,49 @@ void HomeScreen::update() {
 
     gameCarousel->y = lerp(gameCarousel->y, targetY, glGetDeltaTime() * 15);
 
+    backgroundFrame->forceAlpha = false;
+
+    if (isReturningToGame) {
+        backgroundFrame->forceAlpha = true;
+        // if returning to game, fade out home screen
+         ui2dGetMainFrame().alpha = lerp(ui2dGetMainFrame().alpha, 0, glGetDeltaTime() * 10);
+         backgroundFrame->children[0]->alpha = lerp(backgroundFrame->children[0]->alpha, 0, glGetDeltaTime() * 10);
+         if (ui2dGetMainFrame().alpha < 0.01f) {
+                isReturningToGame = false;
+                glfwMakeContextCurrent(nullptr);
+                currentThread->isPaused = false;
+                ioDebugPrint("Returning to game thread\n");
+         }
+    } else {
+        ui2dGetMainFrame().alpha = lerp(ui2dGetMainFrame().alpha, 1, glGetDeltaTime() * 10);
+         backgroundFrame->children[0]->alpha = lerp(backgroundFrame->children[0]->alpha, 1, glGetDeltaTime() * 10);
+
+        if (isPauseMenuVisible) {
+            backgroundFrame->forceAlpha = true;
+        }
+    }
+
+
     // show achievement panel
     if (gameCarouselIndex > 0 && gameCarouselIndex < titles.size()+1) {
+        gameAchievementPanel->visible = true;
+        backgroundFrame->texture = background_test_image;
+
         gameAchievementPanel->y = lerp(gameAchievementPanel->y, 91, glGetDeltaTime() * 10);
         gameAchievementPanel->alpha = lerp(gameAchievementPanel->alpha, 1, glGetDeltaTime() * 15);
         backgroundFrame->alpha = lerp(backgroundFrame->alpha, 1, glGetDeltaTime() * 10);
+
+        if (isPauseMenuVisible) {
+            
+            if (gameCarouselIndex - 1 == currentTitleIndex) {
+                gameAchievementPanel->visible = false;
+                backgroundFrame->texture = background_screenshot;
+            gameAchievementPanel->y = lerp(gameAchievementPanel->y, 200, glGetDeltaTime() * 10);
+            gameAchievementPanel->alpha = lerp(gameAchievementPanel->alpha, 0, glGetDeltaTime() * 15);
+
+            }
+        }
+
     } else {
         gameAchievementPanel->y = lerp(gameAchievementPanel->y, 200, glGetDeltaTime() * 10);
         gameAchievementPanel->alpha = lerp(gameAchievementPanel->alpha, 0, glGetDeltaTime() * 15);
@@ -552,13 +651,12 @@ void HomeScreen::render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(1, 0.98f, 0.97f, 1.0f);
 
-
-        ui2dGetMainFrame().alpha = 1;
     } else if (currentThread) {
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(1, 0.98f, 0.97f, 1.0f);
+        glClearColor(0, 0, 0, 1.0f);
 
+        // if bootign into game, fade 
         ui2dGetMainFrame().alpha = lerp(ui2dGetMainFrame().alpha, 0, glGetDeltaTime() * 10);
 
     }

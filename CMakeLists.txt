@@ -57,3 +57,5 @@ add_subdirectory(system/bootloader)
 add_subdirectory(system/apps/homescreen)
 
 add_subdirectory(examples/app-template)
+add_subdirectory(examples/graphics/cube)
+add_subdirectory(examples/graphics/cube)

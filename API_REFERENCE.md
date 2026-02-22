@@ -10,6 +10,15 @@ The Glint API provides a comprehensive set of functions for developing games and
 
 Individual modules can also be included separately.
 
+### Core Features
+
+- **2D/3D Graphics**: Full OpenGL ES 3.0 support with texture, shader, and rendering functions
+- **3D Math**: Vectors (vec2, vec3, vec4) and matrices (mat4) with complete operator support
+- **Input Handling**: Gamepad and keyboard input via HID module
+- **Filesystem**: Virtual filesystem with resource mounting and file I/O
+- **UI Framework**: 2D UI system with layouts, effects, and event handling
+- **Audio/IO**: Debug output and system communication
+
 ---
 
 ## I/O Module
@@ -429,6 +438,86 @@ glQuadDraw(100, 50, 64, 64, shader);
 
 **Note**: Texture must be bound before calling. Position is in screen space (top-left origin).
 
+### 3D Rendering Functions
+
+#### `glCubeDraw`
+```cpp
+void glCubeDraw(mat4 model, int shader);
+```
+
+Draw a unit cube at the specified model transformation.
+
+**Parameters**:
+- `model`: Model transformation matrix
+- `shader`: Shader program ID (0 to use default shader)
+
+**Example**:
+```cpp
+mat4 model = mat4::identity();
+model *= mat4::rotationY((float)glGetTime());
+model *= mat4::scale(2.0f, 2.0f, 2.0f);
+glCubeDraw(model, 0);
+```
+
+**Note**: Requires `glEnable(GL_DEPTH_TEST)` and proper camera setup with `glCameraSetPerspective()`.
+
+### Camera Control Functions
+
+#### `glCameraSetOrtho`
+```cpp
+void glCameraSetOrtho(float left, float right, float bottom, float top);
+```
+
+Set up an orthographic (2D) camera projection.
+
+**Parameters**:
+- `left`, `right`: Left and right camera bounds
+- `bottom`, `top`: Bottom and top camera bounds
+
+**Example**:
+```cpp
+glCameraSetOrtho(0.0f, 480.0f, 0.0f, 272.0f); // Full screen 2D
+```
+
+#### `glCameraSetPerspective`
+```cpp
+void glCameraSetPerspective(float fovY, float aspect, float nearZ, float farZ);
+```
+
+Set up a perspective (3D) camera projection.
+
+**Parameters**:
+- `fovY`: Vertical field of view in degrees
+- `aspect`: Aspect ratio (width/height)
+- `nearZ`: Near clipping plane distance
+- `farZ`: Far clipping plane distance
+
+**Example**:
+```cpp
+glCameraSetPerspective(45.0f, 480.0f/272.0f, 0.1f, 100.0f);
+```
+
+#### `glCameraSetView`
+```cpp
+void glCameraSetView(vec3 eye, vec3 center, vec3 up);
+```
+
+Set the camera view matrix (position and orientation).
+
+**Parameters**:
+- `eye`: Camera position in world space
+- `center`: Point the camera is looking at
+- `up`: Up direction vector (typically vec3(0,1,0))
+
+**Example**:
+```cpp
+glCameraSetView(
+    vec3(2.0f, 2.0f, 2.0f),  // Camera position
+    vec3(0.0f, 0.0f, 0.0f),  // Look at origin
+    vec3(0.0f, 1.0f, 0.0f)   // Up is Y axis
+);
+```
+
 ### Debug Text Functions
 
 #### `glDebugText` (Basic)
@@ -503,6 +592,81 @@ glDebugTextFmt(0xFFFF00, 0x000080, "Health: %d%%", health);
 
 ---
 
+## Math Module
+
+### Header
+```cpp
+#include <glint/math/math.h>
+#include <glint/types/math.h>  // For vector and matrix types
+```
+
+### Overview
+
+The Math module provides utility functions and comprehensive 3D math types for vector and matrix operations.
+
+### Types
+
+#### `vec2`, `vec3`, `vec4`
+
+Vector types with full operator support:
+
+```cpp
+vec3 position(1.0f, 2.0f, 3.0f);
+vec3 scale(2.0f, 2.0f, 2.0f);
+vec3 result = position + scale;        // Addition
+result = position * 2.0f;             // Scalar multiply
+float dot = position.dot(scale);      // Dot product
+
+// vec3 specific:
+vec3 cross = a.cross(b);              // Cross product
+```
+
+#### `mat4`
+
+4x4 transformation matrix:
+
+```cpp
+// Creates identity matrix
+mat4 model = mat4::identity();
+
+// Transformation functions
+model *= mat4::translation(1.0f, 2.0f, 3.0f);
+model *= mat4::scale(2.0f, 2.0f, 2.0f);
+model *= mat4::rotationX(0.5f);
+model *= mat4::rotationY(glGetTime());
+model *= mat4::rotationZ(0.25f);
+
+// Matrix operations
+mat4 combined = modelMatrix * viewMatrix;
+vec4 transformed = modelMatrix * vec4(x, y, z, 1.0f);
+```
+
+### Utility Functions
+
+#### `clamp`
+```cpp
+float clamp(float value, float min, float max);
+```
+
+Clamp a value between min and max.
+
+```cpp
+float speed = clamp(input_speed, 0.0f, 10.0f);
+```
+
+#### `lerp`
+```cpp
+float lerp(float a, float b, float t);
+```
+
+Linear interpolation between a and b where t is 0-1.
+
+```cpp
+float smooth_alpha = lerp(current_alpha, target_alpha, glGetDeltaTime() * 5.0f);
+```
+
+---
+
 ## UI2D Module
 
 ### Header
@@ -527,6 +691,8 @@ The main UI element type. Represents a rectangular UI component with positioning
 - `ColorRGB color`: Color tint (default white)
 - `int texture`: Texture ID (-1 for untextured)
 - `int shader`: Custom shader ID (-1 for default)
+- `bool forceAlpha`: If true, ignores parent alpha and uses own
+- `bool visible`: If false, frame and children are not rendered
 - `bool canSelect`: If true, frame can be selected/focused
 - `std::function<void(UiFrame&)> onRender`: Custom render callback
 - `std::function<void(UiFrame&)> onClick`: Click handler callback
@@ -586,6 +752,19 @@ UiEffectSettings& effects = frame.getEffectSettings();
 effects.blurEnabled = true;
 effects.blurRadius = 5.0f;
 ```
+
+##### `calculateAutoSize()`
+Recalculate frame size based on children and layout settings.
+
+```cpp
+frame.calculateAutoSize();
+```
+
+##### `revertLayout()`
+Revert layout changes and restore previously stored positions.
+
+```cpp
+frame.revertLayout();
 
 ##### `applyLayout()`
 Recalculate layout for this frame and children.

@@ -6,6 +6,7 @@ sudo make install --silent
 cd ../
 
 cp examples/app-template/*.glt _device/titles/
+cp examples/graphics/cube/*.glt _device/titles/
 
 # start bootloader
 mkdir -p -m 777 _device && cd _device

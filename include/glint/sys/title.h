@@ -24,6 +24,8 @@ struct TitleThread {
     bool isPaused = false;
     int presentResult = (int)true;
 
+    double threadTime;
+
     std::thread threadHandle;
 };
 

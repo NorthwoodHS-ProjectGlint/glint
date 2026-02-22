@@ -1,4 +1,6 @@
 
+#include "cube.h"
+
 typedef unsigned char byte;
 
 // array size is 1957
