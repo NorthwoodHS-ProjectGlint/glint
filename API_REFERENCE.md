@@ -503,6 +503,328 @@ glDebugTextFmt(0xFFFF00, 0x000080, "Health: %d%%", health);
 
 ---
 
+## UI2D Module
+
+### Header
+```cpp
+#include <glint/gl/ui2d.h>
+```
+
+### Overview
+
+The UI2D module provides a complete 2D user interface framework for building interactive menus, HUDs, and UI elements. Features include hierarchical frame management, flexible layout systems, visual effects, and event handling.
+
+### Core UI Types
+
+#### `UiFrame`
+
+The main UI element type. Represents a rectangular UI component with positioning, appearance, layout, and effects.
+
+**Members**:
+- `float x, y`: Position on screen
+- `float width, height`: Dimensions
+- `float alpha`: Opacity (0.0-1.0)
+- `ColorRGB color`: Color tint (default white)
+- `int texture`: Texture ID (-1 for untextured)
+- `int shader`: Custom shader ID (-1 for default)
+- `bool canSelect`: If true, frame can be selected/focused
+- `std::function<void(UiFrame&)> onRender`: Custom render callback
+- `std::function<void(UiFrame&)> onClick`: Click handler callback
+- `std::vector<UiFrame*> children`: Child frames
+- `UiFrame* parent`: Parent frame
+
+**Key Methods**:
+
+##### `setParent(UiFrame& parent)`
+Set this frame's parent for hierarchical organization.
+
+```cpp
+UiFrame& buttonFrame = ui2dAddFrame(10, 10, 100, 30);
+UiFrame& panelFrame = ui2dAddFrame(0, 0, 320, 240);
+buttonFrame.setParent(panelFrame); // Now button is child of panel
+```
+
+##### `setAsMainFrame()`
+Make this frame the root UI frame.
+
+```cpp
+UiFrame& mainPanel = ui2dAddFrame(0, 0, 480, 272);
+mainPanel.setAsMainFrame();
+```
+
+##### `isSelected()` / `isSelectable()`
+Check selection state.
+
+```cpp
+if (frame.isSelectable()) {
+    frame.select();
+}
+```
+
+##### `select()`
+Set this frame as the currently selected frame.
+
+```cpp
+buttonFrame.select(); // Give focus to button
+```
+
+##### `getLayoutSettings()`
+Access and modify layout configuration.
+
+```cpp
+UiLayoutSettings& layout = frame.getLayoutSettings();
+layout.type = UiLayoutSettings::Vertical;
+layout.spacingY = 10.0f;
+frame.applyLayout();
+```
+
+##### `getEffectSettings()`
+Access and modify visual effects.
+
+```cpp
+UiEffectSettings& effects = frame.getEffectSettings();
+effects.blurEnabled = true;
+effects.blurRadius = 5.0f;
+```
+
+##### `applyLayout()`
+Recalculate layout for this frame and children.
+
+```cpp
+frame.applyLayout(); // Update positions based on layout settings
+```
+
+### Layout System
+
+#### `UiLayoutSettings`
+
+Configures how child frames are arranged within a parent frame.
+
+**Layout Types**:
+- `None`: Children positioned manually
+- `Vertical`: Stack children vertically
+- `Horizontal`: Stack children horizontally
+- `Grid`: Arrange in rows and columns
+
+**Alignment**:
+- `Start`: Top/left alignment
+- `Center`: Center alignment
+- `End`: Bottom/right alignment
+
+**Example - Vertical Menu**:
+```cpp
+UiFrame& menu = ui2dAddFrame(100, 50, 200, 400);
+UiLayoutSettings& layout = menu.getLayoutSettings();
+layout.type = UiLayoutSettings::Vertical;
+layout.alignmentX = UiLayoutSettings::Center;
+layout.alignmentY = UiLayoutSettings::Start;
+layout.spacingY = 15.0f;
+layout.paddingTop = 20;
+layout.paddingLeft = 10;
+layout.paddingRight = 10;
+
+// Add buttons as children - they'll auto-arrange
+UiFrame& button1 = ui2dAddFrame(0, 0, 150, 40);
+button1.setParent(menu);
+
+UiFrame& button2 = ui2dAddFrame(0, 0, 150, 40);
+button2.setParent(menu);
+
+menu.applyLayout();
+```
+
+**Example - Grid Layout**:
+```cpp
+UiFrame& grid = ui2dAddFrame(50, 50, 300, 300);
+UiLayoutSettings& layout = grid.getLayoutSettings();
+layout.type = UiLayoutSettings::Grid;
+layout.columns = 3;
+layout.rows = 3;
+layout.spacingX = 10.0f;
+layout.spacingY = 10.0f;
+
+for (int i = 0; i < 9; i++) {
+    UiFrame& cell = ui2dAddFrame(0, 0, 80, 80);
+    cell.setParent(grid);
+}
+
+grid.applyLayout();
+```
+
+### Effects System
+
+#### `UiEffectSettings`
+
+Applies visual effects to frames.
+
+**Blur Effect**:
+```cpp
+UiFrame& blurredBox = ui2dAddFrame(50, 50, 200, 150);
+UiEffectSettings& effects = blurredBox.getEffectSettings();
+effects.blurEnabled = true;
+effects.blurRadius = 10.0f;
+blurredBox.applyLayout();
+```
+
+**Drop Shadow**:
+```cpp
+UiFrame& shadow = ui2dAddFrame(100, 100, 150, 80);
+UiEffectSettings& effects = shadow.getEffectSettings();
+effects.dropShadowEnabled = true;
+effects.dropShadowOffsetX = 5.0f;
+effects.dropShadowOffsetY = 5.0f;
+effects.dropShadowBlur = 8.0f;
+effects.dropShadowColor = {0.0f, 0.0f, 0.0f, 0.5f};
+```
+
+**Inner Shadow**:
+```cpp
+UiFrame& inset = ui2dAddFrame(200, 100, 100, 100);
+UiEffectSettings& effects = inset.getEffectSettings();
+effects.innerShadowEnabled = true;
+effects.innerShadowOffsetX = 2.0f;
+effects.innerShadowOffsetY = 2.0f;
+effects.innerShadowBlur = 4.0f;
+```
+
+### Initialization and Update Functions
+
+#### `ui2dInit()`
+```cpp
+void ui2dInit();
+```
+
+Initialize the UI2D system (called internally, but can reinitialize if needed).
+
+#### `ui2dUpdate()`
+```cpp
+void ui2dUpdate();
+```
+
+Update UI state, handle input, and update selected frame. Call once per frame.
+
+```cpp
+extern "C" int app_cycle() {
+    ui2dUpdate();
+    // Game logic...
+    return 0;
+}
+```
+
+#### `ui2dDraw()`
+```cpp
+void ui2dDraw();
+```
+
+Render all UI frames. Call once per frame after `ui2dUpdate()`.
+
+```cpp
+extern "C" int app_cycle() {
+    ui2dUpdate();
+    ui2dDraw();
+    return 0;
+}
+```
+
+### Main Frame Management
+
+#### `ui2dGetMainFrame()`
+```cpp
+UiFrame& ui2dGetMainFrame();
+```
+
+Get the root UI frame.
+
+**Returns**: Reference to main frame
+
+**Example**:
+```cpp
+UiFrame& mainFrame = ui2dGetMainFrame();
+mainFrame.width = 480;
+mainFrame.height = 272;
+mainFrame.color = {0.2f, 0.2f, 0.2f};
+```
+
+#### `ui2dAddFrame(float x, float y, float width, float height)`
+```cpp
+UiFrame& ui2dAddFrame(float x, float y, float width, float height);
+```
+
+Create a new UI frame at the specified position and size.
+
+**Parameters**:
+- `x`: X position
+- `y`: Y position
+- `width`: Frame width
+- `height`: Frame height
+
+**Returns**: Reference to newly created frame
+
+**Example**:
+```cpp
+UiFrame& button = ui2dAddFrame(50, 200, 100, 40);
+button.color = {0.2f, 0.4f, 0.8f};
+button.onClick = [](UiFrame& self) {
+    ioDebugPrint("Button clicked!\n");
+};
+```
+
+### Complete UI Example
+
+```cpp
+extern "C" void glattach(void* ctx) {
+    glAttach(ctx);
+}
+
+extern "C" int app_setup() {
+    ui2dInit();
+    
+    // Set up background
+    UiFrame& background = ui2dGetMainFrame();
+    background.color = {0.1f, 0.1f, 0.15f};
+    
+    // Create main menu panel
+    UiFrame& menu = ui2dAddFrame(160, 60, 160, 180);
+    menu.color = {0.2f, 0.2f, 0.25f};
+    menu.setParent(background);
+    
+    // Configure vertical layout
+    UiLayoutSettings& layout = menu.getLayoutSettings();
+    layout.type = UiLayoutSettings::Vertical;
+    layout.alignmentX = UiLayoutSettings::Center;
+    layout.spacingY = 15.0f;
+    layout.paddingTop = 20;
+    
+    // Create buttons
+    for (int i = 0; i < 3; i++) {
+        UiFrame& btn = ui2dAddFrame(0, 0, 120, 30);
+        btn.color = {0.3f, 0.5f, 0.8f};
+        btn.canSelect = true;
+        btn.setParent(menu);
+        btn.onClick = [i](UiFrame& self) {
+            ioDebugPrint("Button %d clicked\n", i + 1);
+        };
+    }
+    
+    menu.applyLayout();
+    return 0;
+}
+
+extern "C" int app_cycle() {
+    ui2dUpdate();
+    glClear(GL_COLOR_BUFFER_BIT);
+    ui2dDraw();
+    return 0;
+}
+
+extern "C" int app_present() {
+    glPresent();
+    return glRunning();
+}
+```
+
+---
+
 ## Human Interface Device (HID) Module
 
 ### Header

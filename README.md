@@ -48,7 +48,7 @@ Glint can be built and installed using CMake or the provided build script.
 The easiest way to build and run Glint:
 
 ```bash
-sudo sh ./build.sh
+sudo ./build.sh
 ```
 
 This script will:

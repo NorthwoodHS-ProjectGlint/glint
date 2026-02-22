@@ -9,7 +9,7 @@ The Glint build system uses CMake and custom tooling to create executable packag
 The easiest way to build Glint is using the provided `build.sh` script:
 
 ```bash
-sudo sh ./build.sh
+sudo ./build.sh
 ```
 
 **What it does:**
