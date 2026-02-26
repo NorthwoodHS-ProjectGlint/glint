@@ -1,0 +1,32 @@
+
+name: Build system library
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install packages
+      run: sudo apt-get update && sudo apt-get install -y cmake pkg-config libglfw3-dev libstb-dev libcjson-dev
+
+    - name: Build library
+      run: |
+        # Stage 1: Build and install the core library and system apps (without examples)
+        echo "Building and installing Glint core library..."
+        mkdir -p _build && cd _build
+        cmake .. -DGLINT_BUILD_EXAMPLES=OFF
+        sudo make -j$(nproc)
+        sudo make install
+        cd ../
