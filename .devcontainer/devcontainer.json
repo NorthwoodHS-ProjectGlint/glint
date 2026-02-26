@@ -13,5 +13,5 @@
     "MESA_LOADER_DRIVER_OVERRIDE": "llvmpipe"
   },
   "forwardPorts": [6080, 5901],
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y cmake pkg-config libglfw3-dev libstb-dev libcjson-dev"
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y cmake pkg-config libglfw3-dev libstb-dev libcjson-dev git-lfs && git lfs update --force"
 }
