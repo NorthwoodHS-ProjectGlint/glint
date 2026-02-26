@@ -54,6 +54,10 @@ void sysHomeScreenBoot()
     ioDebugPrint("Home screen resources mounted\n");
 
     void* window = glSetup();
+    if (!window) {
+        ioDebugPrint("OpenGL setup failed; aborting homescreen launch\n");
+        return;
+    }
 
     hidInit();
 

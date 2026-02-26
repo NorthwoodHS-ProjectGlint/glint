@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb/stb_image.h>
 
 #pragma pack(push, 1)
 struct BMFHeader { uint8_t type; uint32_t size; };

@@ -6,7 +6,7 @@
 
 #include <cjson/cJSON.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb/stb_image.h>
 #include <vector>
 
 #include "includes.h"
