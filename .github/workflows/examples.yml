@@ -1,0 +1,56 @@
+name: Build Examples
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Glint Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            build-essential \
+            pkg-config \
+            libglfw3-dev \
+            libcjson-dev \
+            libstb-dev
+
+      - name: Configure Glint library & examples (CMake)
+        run: cmake -B _build -S . -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Glint library, tools & examples
+        run: cmake --build _build --parallel $(nproc)
+
+      - name: Install Glint library & tools
+        run: sudo cmake --install _build
+
+      - name: Collect built .glt artifacts
+        run: |
+          mkdir -p artifacts
+          find . -name "*.glt" ! -path "./_build/*" -exec cp {} artifacts/ \;
+          # Also check inside _build for any .glt files
+          find _build -name "*.glt" -exec cp {} artifacts/ \; 2>/dev/null || true
+          echo "Collected artifacts:"
+          ls -lh artifacts/
+
+      - name: Upload example artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: glint-examples
+          path: artifacts/*.glt
+          if-no-files-found: warn
+          retention-days: 30
