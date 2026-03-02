@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(glint)
 set(CMAKE_CXX_STANDARD 17)
 
+option(GLINT_BUILD_EXAMPLES "Build example applications" OFF)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw3)
 pkg_check_modules(STB REQUIRED stb)
@@ -56,6 +58,6 @@ add_subdirectory(tools/glt_execcreate)
 add_subdirectory(system/bootloader)
 add_subdirectory(system/apps/homescreen)
 
-add_subdirectory(examples/app-template)
-add_subdirectory(examples/graphics/cube)
-add_subdirectory(examples/graphics/cube)
+if(GLINT_BUILD_EXAMPLES)
+    add_subdirectory(examples/graphics/cube)
+endif()

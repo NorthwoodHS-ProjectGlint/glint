@@ -3,7 +3,7 @@ project(glt_execcreate)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(CJSON REQUIRED IMPORTED_TARGET libcjson)
+pkg_check_modules(CJSON REQUIRED libcjson)
 pkg_check_modules(STB REQUIRED stb)
 
 # Add library
@@ -13,11 +13,19 @@ add_executable(glt_execcreate
 
 target_include_directories(glt_execcreate PRIVATE
     ${STB_INCLUDE_DIRS}
+    ${CJSON_INCLUDE_DIRS}
 )
 
-target_link_libraries(glt_execcreate
-    ${STB_LIBRARIES}
-    PkgConfig::CJSON
+target_link_directories(glt_execcreate PRIVATE
+    ${CJSON_LIBRARY_DIRS}
+)
+
+target_link_libraries(glt_execcreate PRIVATE
+    ${CJSON_LIBRARIES}
+)
+
+target_link_options(glt_execcreate PRIVATE
+    ${CJSON_LDFLAGS_OTHER}
 )
 
 

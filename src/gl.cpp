@@ -26,23 +26,37 @@ static double deltaTime = 1.0 / 60.0; // Default to 60 FPS
 static mat4 projectionMatrix;
 static mat4 viewMatrix;
 
+static void glfwErrorCallback(int code, const char* description)
+{
+    ioDebugPrint("GLFW error [%d]: %s\n", code, description ? description : "(no description)");
+}
+
 void* glSetup()
 {
+    glfwSetErrorCallback(glfwErrorCallback);
+
     if (!glfwInit()) {
-        ioDebugPrint("Failed to initialize GLFW\n");
+        ioDebugPrint("Failed to initialize GLFW (DISPLAY may be unavailable, or OpenGL/EGL is unsupported)\n");
         return nullptr;
     }
 
-    // Tell GLFW to use OpenGL ES 2.0
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     // 480x272 is a PSP-like resolution, good starting point
     GLFWwindow* window = glfwCreateWindow(480, 272, "Glint", nullptr, nullptr);
     if (!window) {
-        ioDebugPrint("Failed to create GLFW window\n");
+        ioDebugPrint("OpenGL ES 3.0 context unavailable; retrying with OpenGL ES 2.0\n");
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        window = glfwCreateWindow(480, 272, "Glint", nullptr, nullptr);
+    }
+
+    if (!window) {
+        ioDebugPrint("Failed to create GLFW window (OpenGL ES context unsupported in current display/session)\n");
         glfwTerminate();
         return nullptr;
     }
