@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build Glint Examples
+    name: Build Glint for Raspberry Pi 4B (aarch64)
     runs-on: ubuntu-latest
 
     steps:
@@ -18,19 +18,32 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install cross-compilation tools and aarch64 dependencies
         run: |
+          sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get install -y \
             cmake \
             build-essential \
             pkg-config \
-            libglfw3-dev \
-            libcjson-dev \
-            libstb-dev
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu \
+            libglfw3-dev:arm64 \
+            libcjson-dev:arm64 \
+            libstb-dev:arm64
 
-      - name: Configure Glint library & examples (CMake)
-        run: cmake -B _build -S . -DCMAKE_BUILD_TYPE=Release
+      - name: Configure Glint library & examples for aarch64 (CMake)
+        run: |
+          cmake -B _build -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+            -DCMAKE_PREFIX_PATH=/usr/aarch64-linux-gnu \
+            -DPKG_CONFIG_EXECUTABLE=/usr/bin/pkg-config \
+            -DPKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
 
       - name: Build Glint library, tools, bootloader & examples
         run: cmake --build _build --parallel $(nproc)
@@ -77,34 +90,19 @@ jobs:
           echo "Collected .glt files:"
           ls -lh dist/titles/ || echo "(none found)"
 
-      # ── Archive ────────────────────────────────────────────────────────────
-      - name: Create glint-dist.tar.gz
+      # ── Unified Archive ───────────────────────────────────────────────────
+      - name: Create unified glint-rpi4-aarch64.zip
         run: |
-          tar -czf glint-dist.tar.gz -C dist .
+          cd dist
+          zip -r ../glint-rpi4-aarch64.zip .
           echo "Archive contents:"
-          tar -tzf glint-dist.tar.gz
+          unzip -l ../glint-rpi4-aarch64.zip
 
-      # ── Upload artifacts ───────────────────────────────────────────────────
-      - name: Upload glint distribution archive
+      # ── Upload unified artifact ────────────────────────────────────────────
+      - name: Upload unified Glint distribution (RPi 4B aarch64)
         uses: actions/upload-artifact@v4
         with:
-          name: glint-dist
-          path: glint-dist.tar.gz
+          name: glint-rpi4-aarch64
+          path: glint-rpi4-aarch64.zip
           if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload bootloader binary (standalone)
-        uses: actions/upload-artifact@v4
-        with:
-          name: glint-bootloader
-          path: dist/bin/bootloader
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload example .glt files (standalone)
-        uses: actions/upload-artifact@v4
-        with:
-          name: glint-examples
-          path: dist/titles/*.glt
-          if-no-files-found: warn
           retention-days: 30
