@@ -30,6 +30,7 @@ void HomeScreen::setSimpleQuad(UiFrame& frame, int shader, int texture)
 
 void HomeScreen::loadTitles()
 {
+    ioDebugPrint("Loading titles from filesystem...\n");
     size_t gamesLoaded = 0;
     const char** title_paths = fsListDirectory("titles/", &gamesLoaded);
 
@@ -52,6 +53,7 @@ void HomeScreen::loadTitles()
 
 void HomeScreen::loadTextures()
 {
+    ioDebugPrint("Loading textures...\n");
     appIcon_empty = glGenerateTexture("S:/AppEmpty.png", 4);
     appIcon_filled = glGenerateTexture("S:/AppFilled.png", 4);
     appIcon_select = glGenerateTexture("S:/AppSelectOverlay.png", 4);
@@ -78,10 +80,13 @@ void HomeScreen::loadTextures()
 
     }
 
+    ioDebugPrint("Textures loaded: app icons, sidebar, achievements, background\n");
+
 }
 
 void HomeScreen::buildShaders()
 {
+    ioDebugPrint("Building shaders...\n");
     uiAppShader = glGenerateShader(
         // Vertex shader
         R"(
@@ -189,10 +194,14 @@ void HomeScreen::buildShaders()
         )"
     );
 
+    ioDebugPrint("Shaders built successfully\n");
+
 }
 
 void HomeScreen::buildUi()
 {
+    ioDebugPrint("Building UI...\n");
+
     ui2dInit();
 
     homeFrame = addFrame(0, 0, 480, 272);
@@ -203,6 +212,7 @@ void HomeScreen::buildUi()
     buildCarousel();
     buildGameInfo();
 
+    ioDebugPrint("UI built successfully\n");
 }
 
 void HomeScreen::buildBackground()
