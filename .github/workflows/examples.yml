@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install cross-compilation tools
+      - name: Install cross-compilation tools and dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -32,19 +32,18 @@ jobs:
             libcjson-dev \
             libstb-dev
 
-      - name: Configure Glint library & examples for aarch64 (CMake)
+      - name: Configure Glint for aarch64 (CMake)
         run: |
-          cmake -B _build -S . \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=./toolchain-aarch64.cmake
+          cmake --preset rpi4-aarch64
 
-      - name: Build Glint library, tools, bootloader & examples
-        run: cmake --build _build --parallel $(nproc)
+      - name: Build Glint for aarch64
+        run: |
+          cmake --build --preset rpi4-aarch64 --parallel $(nproc)
 
       # ── Staged install ──────────────────────────────────────────────────────
       - name: Stage install into dist/
         run: |
-          cmake --install _build --prefix "$GITHUB_WORKSPACE/dist"
+          cmake --install _build-rpi4 --prefix "$GITHUB_WORKSPACE/dist"
 
       # ── Bootloader ─────────────────────────────────────────────────────────
       # The bootloader CMakeLists.txt has no install() rule, so we copy it
@@ -52,7 +51,7 @@ jobs:
       - name: Copy bootloader into dist/bin/
         run: |
           mkdir -p dist/bin
-          BOOTLOADER="_build/system/bootloader/bootloader"
+          BOOTLOADER="_build-rpi4/system/bootloader/bootloader"
           if [ -f "$BOOTLOADER" ]; then
             cp "$BOOTLOADER" dist/bin/bootloader
             echo "Copied bootloader to dist/bin/bootloader"
@@ -76,9 +75,9 @@ jobs:
       - name: Collect built .glt artifacts into dist/titles/
         run: |
           mkdir -p dist/titles
-          find . -name "*.glt" ! -path "./_build/*" ! -path "./dist/*" \
+          find . -name "*.glt" ! -path "./_build-rpi4/*" ! -path "./dist/*" \
             -exec cp {} dist/titles/ \;
-          find _build -name "*.glt" \
+          find _build-rpi4 -name "*.glt" \
             -exec cp {} dist/titles/ \; 2>/dev/null || true
           echo "Collected .glt files:"
           ls -lh dist/titles/ || echo "(none found)"

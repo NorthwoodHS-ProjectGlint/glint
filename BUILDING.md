@@ -156,6 +156,102 @@ res/
 
 Resources are accessed at runtime using the relative paths.
 
+## Cross-Compilation for Raspberry Pi 4B
+
+### Overview
+
+Glint can be cross-compiled for the Raspberry Pi 4B (aarch64/ARM64) using CMake presets. This allows you to build the complete Glint stack on any x86_64 Linux machine and deploy it to an RPi 4B.
+
+### Prerequisites
+
+Install the aarch64 cross-compilation toolchain and development libraries:
+
+```bash
+sudo apt-get install -y \
+  gcc-aarch64-linux-gnu \
+  g++-aarch64-linux-gnu \
+  binutils-aarch64-linux-gnu \
+  libglfw3-dev \
+  libcjson-dev \
+  libstb-dev
+```
+
+### Building for RPi 4B
+
+Use the `rpi4-aarch64` CMake preset:
+
+```bash
+# Configure for aarch64
+cmake --preset rpi4-aarch64
+
+# Build
+cmake --build --preset rpi4-aarch64 --parallel $(nproc)
+
+# Install to dist/ directory
+cmake --install _build-rpi4 --prefix dist
+```
+
+Alternatively, use the traditional CMake command with the toolchain file:
+
+```bash
+mkdir -p _build-rpi4
+cmake -B _build-rpi4 -S . \
+  -DCMAKE_TOOLCHAIN_FILE=./toolchain-aarch64.cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DGLINT_BUILD_EXAMPLES=ON
+
+cmake --build _build-rpi4 --parallel $(nproc)
+```
+
+### Understanding CMake Presets
+
+The project includes `CMakePresets.json` which defines build configurations for different platforms:
+
+- **default**: Native build for the current host platform
+- **rpi4-aarch64**: Cross-compile for Raspberry Pi 4B (aarch64)
+
+### Output
+
+The build produces a `dist/` directory containing:
+
+- **lib/**: libglint.so and pkg-config files
+- **bin/**: glt_execcreate tool and bootloader
+- **include/**: Glint development headers
+- **titles/**: Example .glt application files
+
+You can then:
+
+1. Package this into a tarball or zip for deployment
+2. Copy to the RPi 4B and extract to `/opt/glint` or similar
+3. Set `LD_LIBRARY_PATH=/path/to/lib` when running applications
+
+### Troubleshooting Cross-Compilation
+
+**Error: "Package not found"**
+
+If pkg-config can't find packages during cross-compilation, ensure the development libraries are installed:
+
+```bash
+sudo apt-get install libglfw3-dev libcjson-dev libstb-dev
+```
+
+**Error: "wrong architecture"**
+
+If linker errors mention architecture mismatch, ensure the aarch64 cross-compiler is being used:
+
+```bash
+aarch64-linux-gnu-gcc --version  # Should show aarch64-linux-gnu
+```
+
+**Building Only the Library**
+
+To build just the Glint library without examples:
+
+```bash
+cmake --preset rpi4-aarch64 -DGLINT_BUILD_EXAMPLES=OFF
+cmake --build --preset rpi4-aarch64
+```
+
 ## CMake Integration
 
 ### Application CMakeLists.txt Template
