@@ -20,17 +20,36 @@ jobs:
 
       - name: Install cross-compilation tools and dependencies
         run: |
+          # Enable arm64 foreign architecture so apt can fetch aarch64 packages
+          sudo dpkg --add-architecture arm64
+
+          # Point apt at a multi-arch capable mirror for arm64 packages
+          sudo tee /etc/apt/sources.list.d/arm64.list > /dev/null <<'EOF'
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse
+          EOF
+
+          # Restrict existing sources to amd64 so they don't conflict
+          sudo sed -i 's/^deb \[/deb [arch=amd64 /; s/^deb http/deb [arch=amd64] http/' \
+            /etc/apt/sources.list 2>/dev/null || true
+
           sudo apt-get update
+
+          # Native build tools (amd64)
           sudo apt-get install -y \
             cmake \
             build-essential \
             pkg-config \
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu \
-            libglfw3-dev \
-            libcjson-dev \
-            libstb-dev
+            binutils-aarch64-linux-gnu
+
+          # Target libraries — aarch64 (arm64) variants
+          sudo apt-get install -y \
+            libglfw3-dev:arm64 \
+            libcjson-dev:arm64 \
+            libstb-dev:arm64
 
       # ── Stage 1: Build and install core library (without examples) ─────────
       - name: Configure Glint core library for aarch64
