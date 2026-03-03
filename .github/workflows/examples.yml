@@ -54,6 +54,12 @@ jobs:
             libcjson-dev:arm64 \
             libstb-dev:arm64
 
+          # install libraries for x86_64 native build (for glt_execcreate)
+          sudo apt-get install -y \
+            libglfw3-dev \
+            libcjson-dev \
+            libstb-dev
+
       # ── Stage 0: Build native glt_execcreate tool ──────────────────────────
       - name: Build native glt_execcreate tool (x86_64)
         run: |
