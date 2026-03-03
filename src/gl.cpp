@@ -363,6 +363,8 @@ int glGenerateTexture(const unsigned char *data, int dataSize, int desired_chann
     int width, height, channels_in_file;
     // Request 4 components (RGBA) for consistency, but you can use 0 to let it decide.
 
+    ioDebugPrint("Loading texture from memory (size: %d bytes, desired channels: %d)...\n", dataSize, desired_channels);
+ 
     unsigned char* image_data = stbi_load_from_memory(
         data,
         dataSize,
@@ -381,16 +383,22 @@ int glGenerateTexture(const unsigned char *data, int dataSize, int desired_chann
     GLuint tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
+
+    ioDebugPrint("Texture loaded: %dx%d, channels in file: %d\n", width, height, channels_in_file);
     
     // Critical: Font textures often have non-power-of-two widths
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     GLenum format = (channels_in_file == 4) ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
-    
+
+    ioDebugPrint("Texture generated with ID: %u\n", tex);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
+    stbi_image_free(image_data);
+
     return tex;
 }
 

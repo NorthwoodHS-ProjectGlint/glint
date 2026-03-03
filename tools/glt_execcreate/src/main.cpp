@@ -229,9 +229,25 @@ int main(int argc, char const *argv[])
     std::cout << "Executable file created successfully: " << output_path << "\n";
 
     // copy to directory
-    if (copy_to_directory && std::filesystem::exists(directory_to_copy)) {
-        std::filesystem::copy_file(output_path, std::filesystem::path(directory_to_copy) / std::filesystem::path(output_path).filename(), std::filesystem::copy_options::overwrite_existing);
-        std::cout << "Executable copied to: " << directory_to_copy << "\n";
+    if (copy_to_directory) {
+        try {
+            std::filesystem::path target_directory(directory_to_copy ? directory_to_copy : "");
+
+            if (target_directory.empty()) {
+                std::cerr << "Warning: debug direct_copy enabled, but copy_directory is empty.\n";
+                return 0;
+            }
+
+            if (!std::filesystem::exists(target_directory)) {
+                std::filesystem::create_directories(target_directory);
+            }
+
+            std::filesystem::path destination = target_directory / std::filesystem::path(output_path).filename();
+            std::filesystem::copy_file(output_path, destination, std::filesystem::copy_options::overwrite_existing);
+            std::cout << "Executable copied to: " << destination.string() << "\n";
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Warning: failed to copy executable to debug directory: " << e.what() << "\n";
+        }
     }
 
     return 0;

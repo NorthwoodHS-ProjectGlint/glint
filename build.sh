@@ -25,9 +25,10 @@ cd ../
 # Stage 3: Copy examples to device and run bootloader
 echo "Setting up device filesystem..."
 mkdir -p _device/titles
+mkdir -p _device/sys/apps
 
 # Copy built .glt files
-cp examples/app-template/*.glt _device/titles/ 2>/dev/null || echo "Note: app-template .glt not found"
+cp system/apps/homescreen/*.glt _device/sys/apps/ 2>/dev/null || echo "Note: homescreen .glt not found"
 cp examples/graphics/cube/*.glt _device/titles/ 2>/dev/null || echo "Note: cube example .glt not found"
 
 # Run bootloader
