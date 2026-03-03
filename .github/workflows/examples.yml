@@ -148,13 +148,13 @@ jobs:
           echo "Collected .glt files:"
           ls -lh dist/titles/ || echo "(none found)"
 
-        # ── Package installation files ─────────────────────────────────────────
-        - name: Add installation script and README
-          run: |
-            cp install-rpi.sh dist/
-            cp README-RPI.md dist/README.md
-            chmod +x dist/install-rpi.sh
-            echo "Added installation files"
+      # ── Package installation files ─────────────────────────────────────────
+      - name: Add installation script and README
+        run: |
+          cp install-rpi.sh dist/
+          cp README-RPI.md dist/README.md
+          chmod +x dist/install-rpi.sh
+          echo "Added installation files"
 
       # ── Unified Archive ───────────────────────────────────────────────────
       - name: Create unified glint-rpi4-aarch64.zip
