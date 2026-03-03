@@ -54,6 +54,16 @@ jobs:
             libcjson-dev:arm64 \
             libstb-dev:arm64
 
+      # ── Stage 0: Build native glt_execcreate tool ──────────────────────────
+      - name: Build native glt_execcreate tool (x86_64)
+        run: |
+          cmake -B _build-native -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGLINT_BUILD_EXAMPLES=OFF
+          cmake --build _build-native --target glt_execcreate --parallel $(nproc)
+          sudo cp _build-native/tools/glt_execcreate/glt_execcreate /usr/local/bin/
+          which glt_execcreate
+
       # ── Stage 1: Build and install core library (without examples) ─────────
       - name: Configure Glint core library for aarch64
         run: |
