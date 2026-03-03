@@ -31,7 +31,7 @@ void fsCreateFile(const char *path)
 
 bool fsFileExists(const char *path)
 {
-
+    ioDebugPrint("Checking if file exists: %s\n", path);
     if (path[1] == ':' && path[2] == '/') {
         // load from embedded resources
         const void *resourceData = execGetResource(path, nullptr);
@@ -84,7 +84,7 @@ const void *fsReadFile(const char *path, size_t *out_size)
     char *buffer = new char[size];
     std::ifstream file(path, std::ios::binary);
     file.read(buffer, size);
-    
+    ioDebugPrint("File read complete: %s (size: %d bytes)\n", path, (int)size);
     if (out_size) *out_size = size;
     return buffer;
 }

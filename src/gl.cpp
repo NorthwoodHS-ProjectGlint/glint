@@ -399,13 +399,23 @@ int glGenerateTexture(const unsigned char *data, int dataSize, int desired_chann
 
     stbi_image_free(image_data);
 
+    ioDebugPrint("Texture upload complete\n");
+
     return tex;
 }
 
 int glGenerateTexture(const char *filePath, int desiredChannels)
 {
+    ioDebugPrint("Loading texture from file: %s\n", filePath);
+
     int size;
     const void* fileData = fsReadFile(filePath, (size_t*)&size);
+
+    if (!fileData) {
+        ioDebugPrint("Failed to read file for texture: %s\n", filePath);
+        return 0;
+    }
+
     return glGenerateTexture((const unsigned char*)fileData, size, desiredChannels);
 }
 
