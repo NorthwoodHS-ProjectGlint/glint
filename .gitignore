@@ -4,3 +4,5 @@
 /_device/
 /_build-native
 /_build-rpi4
+/dist
+*.zip

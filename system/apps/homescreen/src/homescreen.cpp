@@ -3,14 +3,35 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <cstdio>
 #include <cstring>
+
+namespace {
+inline void hsProbe(const char* step)
+{
+    ioDebugPrint("[HS_PROBE] %s\n", step);
+}
+}
 
 
 void HomeScreen::init() {
+    hsProbe("init: begin");
+    hsProbe("init: loadTitles begin");
     loadTitles();
+    hsProbe("init: loadTitles end");
+
+    hsProbe("init: loadTextures begin");
     loadTextures();
+    hsProbe("init: loadTextures end");
+
+    hsProbe("init: buildShaders begin");
     buildShaders();
+    hsProbe("init: buildShaders end");
+
+    hsProbe("init: buildUi begin");
     buildUi();
+    hsProbe("init: buildUi end");
+    hsProbe("init: done");
 }
 
 UiFrame& HomeScreen::addFrame(float x, float y, float width, float height, UiFrame* parent)
@@ -30,42 +51,69 @@ void HomeScreen::setSimpleQuad(UiFrame& frame, int shader, int texture)
 
 void HomeScreen::loadTitles()
 {
+    hsProbe("loadTitles: begin");
     ioDebugPrint("Loading titles from filesystem...\n");
     size_t gamesLoaded = 0;
     const char** title_paths = fsListDirectory("titles/", &gamesLoaded);
 
     for (size_t i = 0; i < gamesLoaded; i++) {
+        hsProbe("loadTitles: iter begin");
         ioDebugPrint("Found title: %s\n", title_paths[i]);
 
         char full_path[256];
-        strcpy(full_path, "titles/");
-        strcat(full_path, title_paths[i]);
+        int written = snprintf(full_path, sizeof(full_path), "titles/%s", title_paths[i]);
+        if (written < 0 || written >= (int)sizeof(full_path)) {
+            ioDebugPrint("Skipping title with too-long path: %s\n", title_paths[i]);
+            continue;
+        }
 
+        hsProbe("loadTitles: titleLoadInfo begin");
         TitleInfo info = titleLoadInfo(full_path);
+        hsProbe("loadTitles: titleLoadInfo end");
 
         ioDebugPrint("Title icon index: %d\n", info.icon_texture);
 
         titles.push_back(info);
+        hsProbe("loadTitles: push_back end");
     }
 
     ioDebugPrint("Total titles loaded: %zu\n", titles.size());
+    hsProbe("loadTitles: end");
 }
 
 void HomeScreen::loadTextures()
 {
+    hsProbe("loadTextures: begin");
     ioDebugPrint("Loading textures...\n");
+
+    hsProbe("loadTextures: appIcon_empty");
     appIcon_empty = glGenerateTexture("S:/AppEmpty.png", 4);
+
+    hsProbe("loadTextures: appIcon_filled");
     appIcon_filled = glGenerateTexture("S:/AppFilled.png", 4);
+
+    hsProbe("loadTextures: appIcon_select");
     appIcon_select = glGenerateTexture("S:/AppSelectOverlay.png", 4);
 
+    hsProbe("loadTextures: sidebar_frame");
     sidebar_frame = glGenerateTexture("S:/SidebarFrame.png", 4);
+
+    hsProbe("loadTextures: sidebar_button");
     sidebar_button = glGenerateTexture("S:/SidebarButton.png", 4);
+
+    hsProbe("loadTextures: sidebar_mii_icon");
     sidebar_mii_icon = glGenerateTexture("S:/UserIconButton.png", 4);
 
+    hsProbe("loadTextures: achievement_frame");
     achievement_frame = glGenerateTexture("S:/AchievementFrame.png", 4);
+
+    hsProbe("loadTextures: achievement_container");
     achievement_container = glGenerateTexture("S:/AchievementContainer.png", 4);
 
+    hsProbe("loadTextures: background_gradient");
     background_gradient = glGenerateTexture("S:/BackgroundFade.png", 4);
+
+    hsProbe("loadTextures: background_test_image");
     background_test_image = glGenerateTexture("S:/BackgroundTest.png", 4);
 
     {
@@ -81,6 +129,7 @@ void HomeScreen::loadTextures()
     }
 
     ioDebugPrint("Textures loaded: app icons, sidebar, achievements, background\n");
+    hsProbe("loadTextures: end");
 
 }
 
@@ -385,9 +434,11 @@ void HomeScreen::buildCarousel()
 
                     {
                         char full_path[256];
-                        strcpy(full_path, "titles/");
-                        strcat(full_path, titles[gameIndex].id);
-                        strcat(full_path, ".glt");
+                        int written = snprintf(full_path, sizeof(full_path), "titles/%s.glt", titles[gameIndex].id);
+                        if (written < 0 || written >= (int)sizeof(full_path)) {
+                            ioDebugPrint("Game path too long for title id: %s\n", titles[gameIndex].id);
+                            return;
+                        }
                         gamePath = full_path;
                     }
 

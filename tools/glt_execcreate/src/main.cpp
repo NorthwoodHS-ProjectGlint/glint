@@ -152,9 +152,14 @@ int main(int argc, char const *argv[])
         resource_path = (std::filesystem::current_path() / resource_path).string();
 
         // setup title config
-        std::strcpy(exec_file.title_info.id, id);
-        std::strcpy(exec_file.title_info.name, name);
-        std::strcpy(exec_file.title_info.description, description);
+        std::strncpy(exec_file.title_info.id, id ? id : "", sizeof(exec_file.title_info.id) - 1);
+        exec_file.title_info.id[sizeof(exec_file.title_info.id) - 1] = '\0';
+
+        std::strncpy(exec_file.title_info.name, name ? name : "", sizeof(exec_file.title_info.name) - 1);
+        exec_file.title_info.name[sizeof(exec_file.title_info.name) - 1] = '\0';
+
+        std::strncpy(exec_file.title_info.description, description ? description : "", sizeof(exec_file.title_info.description) - 1);
+        exec_file.title_info.description[sizeof(exec_file.title_info.description) - 1] = '\0';
         
         for (int i = 0; i < tag_array_size; i++)
         {
