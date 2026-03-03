@@ -26,12 +26,12 @@
     {
       "name": "default",
       "configurePreset": "default",
-      "parallel": true
+      "jobs": 0
     },
     {
       "name": "rpi4-aarch64",
       "configurePreset": "rpi4-aarch64",
-      "parallel": true
+      "jobs": 0
     }
   ],
   "testPresets": [
