@@ -32,18 +32,38 @@ jobs:
             libcjson-dev \
             libstb-dev
 
-      - name: Configure Glint for aarch64 (CMake)
+      # ── Stage 1: Build and install core library (without examples) ─────────
+      - name: Configure Glint core library for aarch64
         run: |
-          cmake --preset rpi4-aarch64
+          cmake -B _build -S . \
+            -DCMAKE_TOOLCHAIN_FILE=./toolchain-aarch64.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGLINT_BUILD_EXAMPLES=OFF
 
-      - name: Build Glint for aarch64
+      - name: Build Glint core library for aarch64
         run: |
-          cmake --build --preset rpi4-aarch64 --parallel $(nproc)
+          cmake --build _build --parallel $(nproc)
+
+      - name: Install Glint library to staging area
+        run: |
+          cmake --install _build --prefix "$GITHUB_WORKSPACE/dist"
+
+      # ── Stage 2: Build examples (now that library is installed) ────────────
+      - name: Configure Glint with examples for aarch64
+        run: |
+          cmake -B _build-examples -S . \
+            -DCMAKE_TOOLCHAIN_FILE=./toolchain-aarch64.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dist" \
+            -DPKG_CONFIG_PATH="$GITHUB_WORKSPACE/dist/lib/pkgconfig" \
+            -DGLINT_BUILD_EXAMPLES=ON
+
+      - name: Build Glint examples for aarch64
+        run: |
+          cmake --build _build-examples --parallel $(nproc)
 
       # ── Staged install ──────────────────────────────────────────────────────
-      - name: Stage install into dist/
-        run: |
-          cmake --install _build-rpi4 --prefix "$GITHUB_WORKSPACE/dist"
+      # Core library is already installed above, no need to reinstall
 
       # ── Bootloader ─────────────────────────────────────────────────────────
       # The bootloader CMakeLists.txt has no install() rule, so we copy it
@@ -51,7 +71,7 @@ jobs:
       - name: Copy bootloader into dist/bin/
         run: |
           mkdir -p dist/bin
-          BOOTLOADER="_build-rpi4/system/bootloader/bootloader"
+          BOOTLOADER="_build/system/bootloader/bootloader"
           if [ -f "$BOOTLOADER" ]; then
             cp "$BOOTLOADER" dist/bin/bootloader
             echo "Copied bootloader to dist/bin/bootloader"
@@ -75,10 +95,15 @@ jobs:
       - name: Collect built .glt artifacts into dist/titles/
         run: |
           mkdir -p dist/titles
-          find . -name "*.glt" ! -path "./_build-rpi4/*" ! -path "./dist/*" \
-            -exec cp {} dist/titles/ \;
-          find _build-rpi4 -name "*.glt" \
+          # Copy pre-existing .glt files from source tree
+          find . -name "*.glt" \
+            ! -path "./_build/*" \
+            ! -path "./_build-examples/*" \
+            ! -path "./dist/*" \
             -exec cp {} dist/titles/ \; 2>/dev/null || true
+          # Copy built .glt files from both build directories
+          find _build -name "*.glt" -exec cp {} dist/titles/ \; 2>/dev/null || true
+          find _build-examples -name "*.glt" -exec cp {} dist/titles/ \; 2>/dev/null || true
           echo "Collected .glt files:"
           ls -lh dist/titles/ || echo "(none found)"
 
