@@ -32,25 +32,58 @@ jobs:
       - name: Configure Glint library & examples (CMake)
         run: cmake -B _build -S . -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build Glint library, tools & examples
+      - name: Build Glint library, tools, bootloader & examples
         run: cmake --build _build --parallel $(nproc)
 
-      - name: Install Glint library & tools
-        run: sudo cmake --install _build
-
-      - name: Collect built .glt artifacts
+      # ── Staged install ──────────────────────────────────────────────────────
+      # Install into a local staging directory instead of /usr/local so we can
+      # zip it up without needing sudo and without touching the host system.
+      - name: Stage install into dist/
         run: |
-          mkdir -p artifacts
-          find . -name "*.glt" ! -path "./_build/*" -exec cp {} artifacts/ \;
-          # Also check inside _build for any .glt files
-          find _build -name "*.glt" -exec cp {} artifacts/ \; 2>/dev/null || true
-          echo "Collected artifacts:"
-          ls -lh artifacts/
+          cmake --install _build --prefix "$GITHUB_WORKSPACE/dist"
 
-      - name: Upload example artifacts
+      # Patch the pkg-config prefix so it reflects wherever a user extracts the
+      # archive (they can override PKG_CONFIG_PATH at build time if needed).
+      - name: Patch glint.pc prefix
+        run: |
+          PC="$GITHUB_WORKSPACE/dist/lib/pkgconfig/glint.pc"
+          if [ -f "$PC" ]; then
+            sed -i "s|^prefix=.*|prefix=\${pcfiledir}/../..|" "$PC"
+            echo "Patched glint.pc:"
+            cat "$PC"
+          fi
+
+      # ── Example .glt files ─────────────────────────────────────────────────
+      - name: Collect built .glt artifacts into dist/titles/
+        run: |
+          mkdir -p dist/titles
+          find . -name "*.glt" ! -path "./_build/*" ! -path "./dist/*" \
+            -exec cp {} dist/titles/ \;
+          find _build -name "*.glt" \
+            -exec cp {} dist/titles/ \; 2>/dev/null || true
+          echo "Collected .glt files:"
+          ls -lh dist/titles/ || echo "(none found)"
+
+      # ── Archive ────────────────────────────────────────────────────────────
+      - name: Create glint-dist.tar.gz
+        run: |
+          tar -czf glint-dist.tar.gz -C dist .
+          echo "Archive contents:"
+          tar -tzf glint-dist.tar.gz
+
+      # ── Upload artifacts ───────────────────────────────────────────────────
+      - name: Upload glint distribution archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: glint-dist
+          path: glint-dist.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload example .glt files (standalone)
         uses: actions/upload-artifact@v4
         with:
           name: glint-examples
-          path: artifacts/*.glt
+          path: dist/titles/*.glt
           if-no-files-found: warn
           retention-days: 30
