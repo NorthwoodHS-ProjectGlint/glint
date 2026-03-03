@@ -2,3 +2,5 @@
 /_build/
 /_examples_build/
 /_device/
+/_build-native
+/_build-rpi4

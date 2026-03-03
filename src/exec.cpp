@@ -109,10 +109,13 @@ const void *execGetResource(const char *path, size_t *out_size)
 
         if (strcmp(mountPointEntry.first, mountPoint) == 0) {
 
+            ioDebugPrint("Looking for resource in mount point: %s\n", mountPointEntry.first);
 
             const auto& resourceMap = mountPointEntry.second;
             const auto& it = resourceMap.find(std::string(resourcePath));
             if (it != resourceMap.end()) {
+
+                ioDebugPrint("Resource found: %s (size: %u bytes)\n", it->second.path, it->second.data_size);
 
                 if (out_size) {
                     *out_size = it->second.data_size;

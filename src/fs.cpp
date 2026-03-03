@@ -70,6 +70,7 @@ const void *fsReadFile(const char *path, size_t *out_size)
     // check if the path is using the resource system
     if (path[1] == ':' && path[2] == '/') {
         // load from embedded resources
+        ioDebugPrint("Loading resource file: %s\n", path);
         const void *resourceData = execGetResource(path, out_size);
         if (resourceData) {
             return resourceData;
