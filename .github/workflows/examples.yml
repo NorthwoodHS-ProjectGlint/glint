@@ -27,7 +27,10 @@ jobs:
             pkg-config \
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu
+            binutils-aarch64-linux-gnu \
+            libglfw3-dev \
+            libcjson-dev \
+            libstb-dev
 
       - name: Configure Glint library & examples for aarch64 (CMake)
         run: |
