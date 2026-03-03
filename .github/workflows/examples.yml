@@ -36,11 +36,24 @@ jobs:
         run: cmake --build _build --parallel $(nproc)
 
       # ── Staged install ──────────────────────────────────────────────────────
-      # Install into a local staging directory instead of /usr/local so we can
-      # zip it up without needing sudo and without touching the host system.
       - name: Stage install into dist/
         run: |
           cmake --install _build --prefix "$GITHUB_WORKSPACE/dist"
+
+      # ── Bootloader ─────────────────────────────────────────────────────────
+      # The bootloader CMakeLists.txt has no install() rule, so we copy it
+      # manually from the build tree into dist/bin/.
+      - name: Copy bootloader into dist/bin/
+        run: |
+          mkdir -p dist/bin
+          BOOTLOADER="_build/system/bootloader/bootloader"
+          if [ -f "$BOOTLOADER" ]; then
+            cp "$BOOTLOADER" dist/bin/bootloader
+            echo "Copied bootloader to dist/bin/bootloader"
+          else
+            echo "ERROR: bootloader binary not found at $BOOTLOADER" >&2
+            exit 1
+          fi
 
       # Patch the pkg-config prefix so it reflects wherever a user extracts the
       # archive (they can override PKG_CONFIG_PATH at build time if needed).
@@ -77,6 +90,14 @@ jobs:
         with:
           name: glint-dist
           path: glint-dist.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload bootloader binary (standalone)
+        uses: actions/upload-artifact@v4
+        with:
+          name: glint-bootloader
+          path: dist/bin/bootloader
           if-no-files-found: error
           retention-days: 30
 
