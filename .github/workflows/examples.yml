@@ -94,12 +94,12 @@ jobs:
         run: |
           cmake --preset rpi4-aarch64 \
             -DGLINT_BUILD_EXAMPLES=ON \
-            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dist" \
-            -DPKG_CONFIG_PATH="$GITHUB_WORKSPACE/dist/lib/pkgconfig" \
-            -DPKG_CONFIG_EXECUTABLE=/usr/bin/aarch64-linux-gnu-pkg-config
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/dist:/usr/lib/aarch64-linux-gnu" \
+            -DPKG_CONFIG_EXECUTABLE=/usr/bin/pkg-config
         env:
           PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig:${{ github.workspace }}/dist/lib/pkgconfig
           PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          PKG_CONFIG_SYSROOT_DIR: /
 
       - name: Build Glint examples for aarch64
         run: |
