@@ -11,54 +11,17 @@ jobs:
   build:
     name: Build Glint for Raspberry Pi 4B (aarch64)
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/glint-rpi4-toolchain:ubuntu24.04
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install cross-compilation tools and dependencies
-        run: |
-          # Enable arm64 foreign architecture
-          sudo dpkg --add-architecture arm64
-
-          # Restrict ALL existing sources to amd64 only
-          sudo sed -i 's/^Types: deb$/Types: deb/' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true
-          sudo sed -i '/^Architectures:/d' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true
-          sudo sed -i '/^Types: deb/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true
-          # Also handle legacy sources.list format if present
-          sudo sed -i 's/^deb http/deb [arch=amd64] http/' /etc/apt/sources.list 2>/dev/null || true
-
-          # Add arm64-only sources pointing at ports.ubuntu.com (noble = 24.04)
-          sudo tee /etc/apt/sources.list.d/arm64-ports.list > /dev/null <<'EOF'
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse
-          EOF
-
-          sudo apt-get update
-
-          # Native build tools (amd64)
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            pkg-config \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu
-
-          # Target libraries — aarch64 (arm64) variants
-          sudo apt-get install -y \
-            libglfw3-dev:arm64 \
-            libcjson-dev:arm64 \
-            libstb-dev:arm64
-
-          # install libraries for x86_64 native build (for glt_execcreate)
-          sudo apt-get install -y \
-            libglfw3-dev \
-            libcjson-dev \
-            libstb-dev
 
       # ── Stage 0: Build native glt_execcreate tool ──────────────────────────
       - name: Build native glt_execcreate tool (x86_64)
@@ -67,7 +30,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DGLINT_BUILD_EXAMPLES=OFF
           cmake --build _build-native --target glt_execcreate --parallel $(nproc)
-          sudo cp _build-native/tools/glt_execcreate/glt_execcreate /usr/local/bin/
+          cp _build-native/tools/glt_execcreate/glt_execcreate /usr/local/bin/
           which glt_execcreate
 
       # ── Stage 1: Build and install core library (without examples) ─────────
