@@ -71,6 +71,8 @@ void sysHomeScreenBoot()
     }
 
     execCallHandle(handle, "app_shutdown");
+
+    glShutdown();
     
 }
 

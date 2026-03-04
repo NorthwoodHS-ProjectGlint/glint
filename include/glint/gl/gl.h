@@ -3,6 +3,8 @@
 #include "glint/types/math.h"
 
 void* glSetup();
+void glShutdown();
+
 bool glRunning();
 void glAttach(void* ctx);
 void glPresent();

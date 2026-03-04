@@ -364,7 +364,8 @@ void HomeScreen::buildCarousel()
 
                 currentThread = nullptr;
             } else {
-                ioDebugPrint("No game is currently running\n");
+                // exit
+                exit(0);
             }
         };
     }

@@ -236,6 +236,13 @@ void* glSetup()
     return window;
 }
 
+void glShutdown() {
+
+    
+
+    glfwTerminate();
+}
+
 bool glRunning()
 {
     return !glfwWindowShouldClose((GLFWwindow*)glGetContext());
