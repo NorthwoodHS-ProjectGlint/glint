@@ -40,7 +40,8 @@ if [ "$1" = "--install" ] || [ "$1" = "-i" ]; then
         build-essential \
         pkg-config \
         wget \
-        unzip
+        unzip \
+        zip
     echo -e "${GREEN}✓ Native build tools installed${NC}"
     echo ""
     
@@ -78,6 +79,14 @@ EOF
         libcjson-dev:arm64 \
         libstb-dev:arm64
     echo -e "${GREEN}✓ Target libraries installed${NC}"
+    echo ""
+
+    echo "Installing native x86_64 libraries (for glt_execcreate)..."
+    sudo apt-get install -y \
+        libglfw3-dev \
+        libcjson-dev \
+        libstb-dev
+    echo -e "${GREEN}✓ Native x86_64 libraries installed${NC}"
     echo ""
     
     echo -e "${GREEN}All dependencies installed successfully!${NC}"
