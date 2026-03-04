@@ -285,8 +285,8 @@ extern "C" void app_shutdown() {
 - **OpenGL ES 3.0**: Uses OpenGL ES 3.0 (not desktop OpenGL)
 - **Context managed by system**: Don't create your own GL context
 - **Single window**: Applications share the main window
-- **Fixed resolution**: 480x272 pixels (PSP-like resolution)
-- **Screen coordinates**: Origin at top-left (0,0 to 480,272)
+- **Fixed resolution**: 800x480 pixels (PSP-like resolution)
+- **Screen coordinates**: Origin at top-left (0,0 to 800,480)
 
 ### Rendering Capabilities
 

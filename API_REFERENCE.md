@@ -421,8 +421,8 @@ void glQuadDraw(float x, float y, float width, float height, int shader);
 Draw a textured quad at the specified position.
 
 **Parameters**:
-- `x`: X position in screen coordinates (0-480)
-- `y`: Y position in screen coordinates (0-272)
+- `x`: X position in screen coordinates (0-800)
+- `y`: Y position in screen coordinates (0-480)
 - `width`: Quad width in pixels
 - `height`: Quad height in pixels
 - `shader`: Shader program to use
@@ -476,7 +476,7 @@ Set up an orthographic (2D) camera projection.
 
 **Example**:
 ```cpp
-glCameraSetOrtho(0.0f, 480.0f, 0.0f, 272.0f); // Full screen 2D
+glCameraSetOrtho(0.0f, 800.0f, 0.0f, 480.0f); // Full screen 2D
 ```
 
 #### `glCameraSetPerspective`
@@ -494,7 +494,7 @@ Set up a perspective (3D) camera projection.
 
 **Example**:
 ```cpp
-glCameraSetPerspective(45.0f, 480.0f/272.0f, 0.1f, 100.0f);
+glCameraSetPerspective(45.0f, 800.0f/480.0f, 0.1f, 100.0f);
 ```
 
 #### `glCameraSetView`
@@ -714,7 +714,7 @@ buttonFrame.setParent(panelFrame); // Now button is child of panel
 Make this frame the root UI frame.
 
 ```cpp
-UiFrame& mainPanel = ui2dAddFrame(0, 0, 480, 272);
+UiFrame& mainPanel = ui2dAddFrame(0, 0, 800, 480);
 mainPanel.setAsMainFrame();
 ```
 
@@ -919,8 +919,8 @@ Get the root UI frame.
 **Example**:
 ```cpp
 UiFrame& mainFrame = ui2dGetMainFrame();
-mainFrame.width = 480;
-mainFrame.height = 272;
+mainFrame.width = 800;
+mainFrame.height = 480;
 mainFrame.color = {0.2f, 0.2f, 0.2f};
 ```
 
@@ -1328,7 +1328,7 @@ Glint includes OpenGL support via GLAD. Include the OpenGL headers:
 
 All standard OpenGL functions are available. Use the `glGenerateShader()` and texture generation helpers, or use OpenGL directly.
 
-The system uses **OpenGL ES 3.0** with a fixed resolution of **480x272 pixels**.
+The system uses **OpenGL ES 3.0** with a fixed resolution of **800x480 pixels**.
 
 ---
 

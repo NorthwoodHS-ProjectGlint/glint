@@ -47,13 +47,13 @@ void* glSetup()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    // 480x272 is a PSP-like resolution, good starting point
-    GLFWwindow* window = glfwCreateWindow(480, 272, "Glint", nullptr, nullptr);
+    // 800x480 is a PSP-like resolution, good starting point
+    GLFWwindow* window = glfwCreateWindow(800, 480, "Glint", nullptr, nullptr);
     if (!window) {
         ioDebugPrint("OpenGL ES 3.0 context unavailable; retrying with OpenGL ES 2.0\n");
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-        window = glfwCreateWindow(480, 272, "Glint", nullptr, nullptr);
+        window = glfwCreateWindow(800, 480, "Glint", nullptr, nullptr);
     }
 
     if (!window) {
@@ -150,8 +150,8 @@ void* glSetup()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
         
         void main() {
 
@@ -461,7 +461,7 @@ void glDebugText(unsigned long color, unsigned long bg, const char *text)
     int cursorX = 0;
 
     
-    float textScale = 2.0f;
+    float textScale = 4.0f;
 
     for (const char* p = text; *p; ++p) {
         char c = *p;

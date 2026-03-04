@@ -29,12 +29,14 @@ extern "C" int app_cycle() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    glCameraSetPerspective(45.0f, 480.0f/272.0f, 0.1f, 100.0f);
+    glCameraSetPerspective(45.0f, 800.0f/480.0f, 0.1f, 100.0f);
     glCameraSetView(vec3(1,1,1), vec3(0,0,0), vec3(0,1,0));
 
     mat4 model = mat4::identity();
     model *= mat4::rotationY((float)glGetTime());
     model *= mat4::rotationX((float)glGetTime() * 0.5f);
+
+    glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
 
 
     glCubeDraw(model, 0); // Using shader 0 for now, will need to set up a proper shader later

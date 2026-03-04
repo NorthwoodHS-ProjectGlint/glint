@@ -112,8 +112,8 @@ static void ui2dEnsureShaders()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
 
         void main() {
             vec2 scaledPos = aPos * scale;
@@ -215,8 +215,8 @@ static void ui2dEnsureShaders()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
 
         void main() {
             vec2 scaledPos = aPos * scale;
@@ -282,8 +282,8 @@ static void ui2dEnsureShaders()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
 
         void main() {
             vec2 scaledPos = aPos * scale;
@@ -348,7 +348,7 @@ void ui2dInit()
 {
 
     ui2dEnsureShaders();
-    mainFrame = ui2dAddFrame(0, 0, 480, 272);
+    mainFrame = ui2dAddFrame(0, 0, 800, 480);
 
     ioDebugPrint("Initializing 2D UI system\n");
 

@@ -120,7 +120,7 @@ void HomeScreen::loadTextures()
         GLuint tex;
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 480, 272, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 800, 480, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         background_screenshot = tex;
@@ -148,8 +148,8 @@ void HomeScreen::buildShaders()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
         
         void main() {
 
@@ -206,8 +206,8 @@ void HomeScreen::buildShaders()
         uniform vec2 position;
         uniform vec2 scale;
 
-        #define SCREEN_WIDTH 480.0
-        #define SCREEN_HEIGHT 272.0
+        #define SCREEN_WIDTH 800.0
+        #define SCREEN_HEIGHT 480.0
         
         void main() {
 
@@ -253,7 +253,7 @@ void HomeScreen::buildUi()
 
     ui2dInit();
 
-    homeFrame = addFrame(0, 0, 480, 272);
+    homeFrame = addFrame(0, 0, 800, 480);
     homeFrame.setAsMainFrame();
 
     buildBackground();
@@ -266,7 +266,7 @@ void HomeScreen::buildUi()
 
 void HomeScreen::buildBackground()
 {
-    UiFrame& bgFrame = addFrame(0, 0, 480, 272);
+    UiFrame& bgFrame = addFrame(0, 0, 800, 480);
     //bgFrame.color = {0.25f, 0.25f, 0.25f};
     bgFrame.shader = uiShader;
     bgFrame.texture = background_test_image;
@@ -275,7 +275,7 @@ void HomeScreen::buildBackground()
     bgEffects.blurRadius = 3;
     backgroundFrame = &bgFrame;
 
-    UiFrame& bgImageFrame = addFrame(0, 0, 480, 272, backgroundFrame);
+    UiFrame& bgImageFrame = addFrame(0, 0, 800, 480, backgroundFrame);
     setSimpleQuad(bgImageFrame, uiShader, background_gradient);
 }
 
@@ -304,7 +304,7 @@ void HomeScreen::buildSidebar()
 
 void HomeScreen::buildCarousel()
 {
-    UiFrame& carousel = addFrame(300, 0, 125, 272);
+    UiFrame& carousel = addFrame(300, 0, 125, 480);
     gameCarousel = &carousel;
 
     auto& layout = carousel.getLayoutSettings();
@@ -574,7 +574,7 @@ void HomeScreen::onGameReturn()
 
     glDisable(GL_DEPTH_TEST);
 
-    int width = 480, height = 272, channels = 4;
+    int width = 800, height = 480, channels = 4;
     GLubyte* pixels = new GLubyte[channels * width * height];
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
@@ -634,7 +634,7 @@ void HomeScreen::update() {
 
     float targetY = -1 * gameCarouselIndex * (100 + 15); // item size + spacing
 
-    targetY += (272/2) - (125/2); // center the carousel items vertically
+    targetY += (480/2) - (125/2); // center the carousel items vertically
 
     gameCarousel->y = lerp(gameCarousel->y, targetY, glGetDeltaTime() * 15);
 
@@ -705,6 +705,8 @@ void HomeScreen::render() {
     }
 
 
+
+    glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
 
 
     if (!currentThread || (currentThread->isPaused)) {
