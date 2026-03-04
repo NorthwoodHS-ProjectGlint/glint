@@ -23,3 +23,6 @@ target_link_libraries(bootloader
     glint
     ${GLFW_LIBRARIES}
 )
+
+# Export symbols so dlopen'd plugins (homescreen, games) can resolve libglint symbols
+set_target_properties(bootloader PROPERTIES ENABLE_EXPORTS ON)

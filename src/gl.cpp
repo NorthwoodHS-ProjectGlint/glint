@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <limits>
 
 #include "internal.h"
 #include "dbg_fontload.h"
@@ -389,7 +390,9 @@ int glGenerateTexture(const unsigned char *data, int dataSize, int desired_chann
     // Critical: Font textures often have non-power-of-two widths
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    GLenum format = (channels_in_file == 4) ? GL_RGBA : GL_RGB;
+    // Use desired_channels (what stbi actually returned), not channels_in_file (what the file originally had)
+    int actual_channels = (desired_channels != 0) ? desired_channels : channels_in_file;
+    GLenum format = (actual_channels == 4) ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
 
     ioDebugPrint("Texture generated with ID: %u\n", tex);
@@ -408,15 +411,20 @@ int glGenerateTexture(const char *filePath, int desiredChannels)
 {
     ioDebugPrint("Loading texture from file: %s\n", filePath);
 
-    int size;
-    const void* fileData = fsReadFile(filePath, (size_t*)&size);
+    size_t size = 0;
+    const void* fileData = fsReadFile(filePath, &size);
 
     if (!fileData) {
         ioDebugPrint("Failed to read file for texture: %s\n", filePath);
         return 0;
     }
 
-    return glGenerateTexture((const unsigned char*)fileData, size, desiredChannels);
+    if (size > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        ioDebugPrint("Texture file too large to decode safely: %s (size: %zu bytes)\n", filePath, size);
+        return 0;
+    }
+
+    return glGenerateTexture((const unsigned char*)fileData, static_cast<int>(size), desiredChannels);
 }
 
 void glDebugText(const char *text)
