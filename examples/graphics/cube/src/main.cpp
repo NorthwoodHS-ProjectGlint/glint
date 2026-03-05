@@ -36,8 +36,9 @@ extern "C" int app_cycle() {
     model *= mat4::rotationY((float)glGetTime());
     model *= mat4::rotationX((float)glGetTime() * 0.5f);
 
-    glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
-
+    //glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
+    // delta time
+    //glDebugTextFmt("Delta Time: %.4f", glGetDeltaTime());
 
     glCubeDraw(model, 0); // Using shader 0 for now, will need to set up a proper shader later
 

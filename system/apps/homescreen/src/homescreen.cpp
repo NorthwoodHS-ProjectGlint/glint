@@ -707,8 +707,6 @@ void HomeScreen::render() {
 
 
 
-    glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
-
 
     if (!currentThread || (currentThread->isPaused)) {
 
@@ -724,6 +722,10 @@ void HomeScreen::render() {
         ui2dGetMainFrame().alpha = lerp(ui2dGetMainFrame().alpha, 0, glGetDeltaTime() * 10);
 
     }
+
+    glDebugTextFmt("Hello, Glint! Time: %.2f", glGetTime());
+    // delta time
+    glDebugTextFmt("Delta Time: %.4f", glGetDeltaTime());
 
 
     ui2dDraw();
